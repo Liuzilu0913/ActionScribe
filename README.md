@@ -235,6 +235,9 @@ streamlit run app.py
 ```
 
 The Streamlit frontend will be available at [**http://localhost:8501**](http://localhost:8501). It connects to the backend automatically via the `BACKEND_URL` environment variable.
+<img width="1341" height="641" alt="Screenshot 2026-07-17 215237" src="https://github.com/user-attachments/assets/37b3e772-26bd-4e4e-8186-c7e1f2454123" />
+<img width="1343" height="654" alt="Screenshot 2026-07-17 215053" src="https://github.com/user-attachments/assets/e00ab8e2-8629-438c-bb1a-0669b2b7b0e4" />
+<img width="1348" height="649" alt="Screenshot 2026-07-17 214911" src="https://github.com/user-attachments/assets/c041c1ed-b61d-4421-9d8d-75726fa38099" />
 
 ---
 
