@@ -38,6 +38,8 @@
 
 - [Security & Integrations](#-security--integrations)
 
+- [Screenshots](#-screenshots)
+
 - [Contributing](#-contributing)
 
 - [License](#-license)
@@ -260,6 +262,17 @@ ActionScribe is designed with robust integrations and considerations for secure 
 - **💬 Slack Integration** — Posts concise summaries and action item lists to designated Slack channels, keeping your team informed.
 
 - **🛡️ CORS Protection** — Configurable CORS middleware in FastAPI allows for controlled access to the API endpoints.
+
+---
+
+## 📸 Screenshots
+
+Here are some screenshots of the ActionScribe dashboard in action:
+
+<div align="center">
+<img src="assets/dashboard.png" alt="ActionScribe Dashboard Screenshot" width="800"/>
+  <p><i>The main dashboard showing audio upload, transcript input, and extracted action items.</i></p>
+</div>
 
 ---
 
