@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────
+# AI Meeting-to-Action Pipeline — Requirements
+# GPU NOT required — 100% cloud API based
+# ─────────────────────────────────────────────
+
+# Web Framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# LangChain & LangGraph (modern versions)
+langgraph>=0.2.0
+langchain-openai>=0.1.8
+langchain-core>=0.2.0
+langchain>=0.2.0
+
+# OpenAI — Cloud API only (NO openai-whisper local model!)
+openai>=1.35.0
+
+# Data Validation
+pydantic>=2.7.0
+
+# UI
+streamlit>=1.35.0
+
+# HTTP & Utilities
+requests>=2.31.0
+python-dotenv>=1.0.0
+httpx>=0.27.0
+
+# Testing
+pytest>=7.4.4
+pytest-asyncio>=0.23.3
+httpx>=0.27.0
+
+# NOTE: Do NOT install openai-whisper — that's the LOCAL model requiring GPU.
+# We use openai package's client.audio.transcriptions API (cloud, no GPU).
