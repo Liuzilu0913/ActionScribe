@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from agents.graph import workflow
+from agents.graph import mcp_dispatcher_node, workflow
 
 
 @patch("agents.graph.run_extractor")
@@ -75,3 +75,21 @@ def test_full_pipeline_flow(
     assert result["mcp_results"]["notion"]["success"] is True
     assert result["mcp_results"]["slack"]["success"] is True
     assert len(result["errors"]) == 0
+
+
+@patch("agents.graph.dispatch_to_notion")
+@patch("agents.graph.dispatch_to_slack")
+def test_dispatcher_respects_disabled_integrations(mock_slack, mock_notion):
+    result = mcp_dispatcher_node(
+        {
+            "structured_items": [{"task": "Do work"}],
+            "send_to_notion": False,
+            "send_to_slack": False,
+            "errors": [],
+        }
+    )
+
+    mock_notion.assert_not_called()
+    mock_slack.assert_not_called()
+    assert result["mcp_results"]["notion"]["skipped"] is True
+    assert result["mcp_results"]["slack"]["skipped"] is True

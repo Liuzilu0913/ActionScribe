@@ -1,1 +1,1 @@
-"""Transcriber module — OpenAI Whisper cloud API."""
+"""Transcriber module — Groq Whisper cloud API."""

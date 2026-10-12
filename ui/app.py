@@ -300,7 +300,7 @@ with st.sidebar:
     **AI Meeting-to-Action Pipeline**
     
     - 🎙️ Whisper API transcription
-    - 🤖 GPT-4o extraction
+    - 🤖 Groq LLM extraction
     - ⚡ Priority scoring (1-25)
     - 📋 Notion task creation
     - 💬 Slack notifications
@@ -334,7 +334,7 @@ with left_col:
         <div style='background:rgba(102,126,234,0.08);border:1px solid rgba(102,126,234,0.2);
         border-radius:10px;padding:0.8rem;margin-bottom:1rem;font-size:0.85rem;color:#8b9dc3;'>
         ℹ️ Max 25 MB · Supported: mp3, wav, m4a, ogg, webm<br>
-        Your file is transcribed via <strong>OpenAI Whisper API</strong> — no GPU needed.
+        Your file is transcribed via <strong>Groq Whisper API</strong> — no GPU needed.
         </div>
         """, unsafe_allow_html=True)
 
@@ -406,12 +406,20 @@ with right_col:
                     response = requests.post(
                         f"{BACKEND_URL}/api/v1/pipeline/process",
                         files=files,
+                        data={
+                            "send_to_notion": send_to_notion,
+                            "send_to_slack": send_to_slack,
+                        },
                         timeout=300,  # long timeout for transcription + 3 LLM calls
                     )
                 else:
                     response = requests.post(
                         f"{BACKEND_URL}/api/v1/pipeline/process",
-                        data={"raw_transcript": text_input},
+                        data={
+                            "raw_transcript": text_input,
+                            "send_to_notion": send_to_notion,
+                            "send_to_slack": send_to_slack,
+                        },
                         timeout=120,
                     )
 
@@ -483,7 +491,9 @@ with right_col:
                         notion = mcp.get("notion", {})
                         created = notion.get("created", 0)
                         n_total = notion.get("total", 0)
-                        if notion.get("error") and "missing" in str(notion.get("error", "")):
+                        if notion.get("skipped"):
+                            st.info("📋 Notion: disabled for this run")
+                        elif notion.get("error") and "missing" in str(notion.get("error", "")):
                             st.warning(f"📋 Notion: credentials not set")
                         elif created > 0:
                             st.success(f"📋 Notion: {created}/{n_total} tasks created")
@@ -493,7 +503,9 @@ with right_col:
 
                     with s_col:
                         slack = mcp.get("slack", {})
-                        if slack.get("success"):
+                        if slack.get("skipped"):
+                            st.info("💬 Slack: disabled for this run")
+                        elif slack.get("success"):
                             sent = slack.get("items_sent", 0)
                             st.success(f"💬 Slack: {sent} items sent")
                         elif slack.get("error") and "missing" in str(slack.get("error", "")):

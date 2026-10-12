@@ -1,7 +1,7 @@
 """
 agents/prioritizer_agent.py
 ────────────────────────────
-Assigns priority scores to extracted action items using GPT-4o.
+Assigns priority scores to extracted action items using Groq.
 
 Scoring model: urgency_score (1-5) × impact_score (1-5) = priority_score (1-25)
 
@@ -11,11 +11,12 @@ Priority Labels:
    6-11 → Medium
     1-5 → Low
 
-Uses GPT-4o via LangChain — no GPU required.
+Uses Groq via LangChain — no GPU required.
 """
 
 import json
 import logging
+import os
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
@@ -61,7 +62,9 @@ def run_prioritizer(raw_items: list) -> list:
     if not raw_items:
         logger.warning("Prioritizer received empty item list — returning empty.")
         return []
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.0)
+    llm = ChatGroq(
+        model=os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-20b"), temperature=0.0
+    )
     prompt = ChatPromptTemplate.from_messages([
         ("system", PRIORITIZER_SYSTEM_PROMPT),
         ("user", "Action items to prioritize:\n\n{items}"),

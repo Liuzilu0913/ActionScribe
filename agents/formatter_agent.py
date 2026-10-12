@@ -6,10 +6,11 @@ Validates and normalizes scored action items using Pydantic structured output.
 Guarantees every action item conforms to the ActionItem schema before
 being dispatched to Notion/Slack.
 
-Uses GPT-4o with structured output — no GPU required.
+Uses Groq with structured output — no GPU required.
 """
 
 import logging
+import os
 from typing import List, Optional
 
 from langchain_groq import ChatGroq
@@ -53,7 +54,7 @@ def run_formatter(prioritized_items: list) -> list:
     """
     Normalize and validate prioritized items against the ActionItem schema.
 
-    Uses GPT-4o with structured output (function calling under the hood)
+    Uses Groq with structured output (function calling under the hood)
     to guarantee schema compliance.
 
     Args:
@@ -67,7 +68,9 @@ def run_formatter(prioritized_items: list) -> list:
         logger.warning("Formatter received empty list — returning empty.")
         return []
 
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.0)
+    llm = ChatGroq(
+        model=os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-20b"), temperature=0.0
+    )
     structured_llm = llm.with_structured_output(MeetingOutput)
 
     instruction = (

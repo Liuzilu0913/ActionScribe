@@ -34,6 +34,8 @@ class PipelineState(TypedDict):
     """
 
     transcript: str                        # Input: raw transcript text
+    send_to_notion: bool                   # Whether Notion dispatch is enabled
+    send_to_slack: bool                    # Whether Slack dispatch is enabled
     raw_items: List[Dict[str, Any]]        # After extractor: unscored action items
     priorities: List[Dict[str, Any]]       # After prioritizer: scored action items
     structured_items: List[Dict[str, Any]] # After formatter: validated + clean items
@@ -101,21 +103,35 @@ def mcp_dispatcher_node(state: PipelineState) -> Dict[str, Any]:
     notion_result: Dict[str, Any] = {}
     slack_result: Dict[str, Any] = {}
 
-    try:
-        notion_result = dispatch_to_notion(tasks)
-        logger.info("Notion dispatch: %s", notion_result)
-    except Exception as e:
-        logger.error("Notion dispatch failed: %s", str(e))
-        notion_result = {"success": False, "error": str(e)}
-        errors.append(f"Notion dispatch error: {str(e)}")
+    if state.get("send_to_notion", True):
+        try:
+            notion_result = dispatch_to_notion(tasks)
+            logger.info("Notion dispatch: %s", notion_result)
+        except Exception as e:
+            logger.error("Notion dispatch failed: %s", str(e))
+            notion_result = {"success": False, "error": str(e)}
+            errors.append(f"Notion dispatch error: {str(e)}")
+    else:
+        notion_result = {
+            "success": False,
+            "skipped": True,
+            "error": "Notion dispatch disabled for this run.",
+        }
 
-    try:
-        slack_result = dispatch_to_slack(tasks)
-        logger.info("Slack dispatch: %s", slack_result)
-    except Exception as e:
-        logger.error("Slack dispatch failed: %s", str(e))
-        slack_result = {"success": False, "error": str(e)}
-        errors.append(f"Slack dispatch error: {str(e)}")
+    if state.get("send_to_slack", True):
+        try:
+            slack_result = dispatch_to_slack(tasks)
+            logger.info("Slack dispatch: %s", slack_result)
+        except Exception as e:
+            logger.error("Slack dispatch failed: %s", str(e))
+            slack_result = {"success": False, "error": str(e)}
+            errors.append(f"Slack dispatch error: {str(e)}")
+    else:
+        slack_result = {
+            "success": False,
+            "skipped": True,
+            "error": "Slack dispatch disabled for this run.",
+        }
 
     return {
         "mcp_results": {

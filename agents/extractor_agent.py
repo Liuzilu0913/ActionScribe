@@ -4,11 +4,12 @@ agents/extractor_agent.py
 LLM-based meeting transcript analyzer.
 Extracts all action items (explicit and implicit) as structured JSON.
 
-Uses GPT-4o via LangChain — no GPU required.
+Uses Groq via LangChain — no GPU required.
 """
 
 import json
 import logging
+import os
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
@@ -57,7 +58,7 @@ def run_extractor(transcript: str) -> list:
     """
     Parse a meeting transcript and extract all action items.
 
-    Uses GPT-4o via LangChain ChatOpenAI — cloud API, no GPU.
+    Uses Groq via LangChain ChatGroq — cloud API, no GPU.
 
     Args:
         transcript: Raw meeting transcript text.
@@ -70,7 +71,9 @@ def run_extractor(transcript: str) -> list:
         logger.warning("Empty transcript passed to extractor — returning empty list.")
         return []
 
-    llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.0)
+    llm = ChatGroq(
+        model=os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-20b"), temperature=0.0
+    )
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", EXTRACTOR_SYSTEM_PROMPT),

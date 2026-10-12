@@ -57,7 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB — OpenAI Whisper API limit
+MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024  # 25 MB — Groq free-tier audio limit
 
 ALLOWED_AUDIO_TYPES = {
     "audio/mpeg",
@@ -94,7 +94,7 @@ async def health_check():
 @app.post("/api/v1/transcribe", tags=["Transcription"])
 async def transcribe_audio(audio_file: UploadFile = File(...)):
     """
-    Transcribe an audio file to text using OpenAI Whisper API (cloud).
+    Transcribe an audio file to text using Groq Whisper API (cloud).
 
     - Supported formats: mp3, wav, m4a, ogg, webm, mp4
     - Max file size: 25 MB
@@ -134,6 +134,8 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
 async def process_meeting(
     audio_file: Optional[UploadFile] = File(None),
     raw_transcript: Optional[str] = Form(None),
+    send_to_notion: bool = Form(True),
+    send_to_slack: bool = Form(True),
 ):
     """
     Full pipeline: Audio or Transcript → Action Items → Notion + Slack.
@@ -194,6 +196,8 @@ async def process_meeting(
     # ── Step 2: LangGraph pipeline ────────────────────────────────────────────
     initial_state = {
         "transcript": resolved_transcript,
+        "send_to_notion": send_to_notion,
+        "send_to_slack": send_to_slack,
         "raw_items": [],
         "priorities": [],
         "structured_items": [],

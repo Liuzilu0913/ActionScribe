@@ -1,10 +1,10 @@
 """
 transcriber/whisper_api.py
 ──────────────────────────
-Groq Whisper API wrapper for FREE cloud-based audio transcription.
+Groq Whisper API wrapper for cloud-based audio transcription.
 No GPU required — all processing happens on Groq's servers.
 
-Free tier: 7,200 seconds of audio per day.
+Groq API usage limits and pricing depend on the account plan.
 Supported audio formats: mp3, mp4, mpeg, mpga, m4a, wav, webm
 Max file size: 25 MB
 """
@@ -18,8 +18,8 @@ from groq import Groq
 class WhisperTranscriber:
     """
     Groq Whisper API wrapper.
-    100% FREE cloud transcription — no GPU required.
-    Get your free API key at: https://console.groq.com
+    Cloud transcription — no GPU required.
+    Get an API key at: https://console.groq.com/keys
     """
 
     SUPPORTED_FORMATS = ["mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"]
@@ -36,7 +36,7 @@ class WhisperTranscriber:
         if not self.api_key:
             raise ValueError(
                 "GROQ_API_KEY environment variable is missing. "
-                "Get a free key at https://console.groq.com and set it in your .env file."
+                "Get a key at https://console.groq.com/keys and set it in your .env file."
             )
         self.client = Groq(api_key=self.api_key)
 
@@ -47,7 +47,7 @@ class WhisperTranscriber:
         language: Optional[str] = "en",
     ) -> str:
         """
-        Convert an audio file to text using Groq Whisper API (FREE).
+        Convert an audio file to text using Groq Whisper API.
 
         Args:
             audio_file: Binary file-like object (e.g., io.BytesIO)
