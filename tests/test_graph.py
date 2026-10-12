@@ -2,16 +2,16 @@ from unittest.mock import patch
 
 import pytest
 
-from agents.graph import mcp_dispatcher_node, workflow
+from agents.graph import integration_dispatcher_node, workflow
 
 
 @patch("agents.graph.run_extractor")
 @patch("agents.graph.run_prioritizer")
 @patch("agents.graph.run_formatter")
-@patch("agents.graph.dispatch_to_notion")
-@patch("agents.graph.dispatch_to_slack")
+@patch("agents.graph.dispatch_to_feishu_bitable")
+@patch("agents.graph.dispatch_to_feishu_chat")
 def test_full_pipeline_flow(
-    mock_slack, mock_notion, mock_formatter, mock_prioritizer, mock_extractor
+    mock_feishu_chat, mock_bitable, mock_formatter, mock_prioritizer, mock_extractor
 ):
     """Verify that StateGraph walks through all nodes in order and propagates state."""
     # 1. Extractor mock
@@ -48,8 +48,8 @@ def test_full_pipeline_flow(
     ]
 
     # 4. Dispatcher mocks
-    mock_notion.return_value = {"success": True, "created": 1, "total": 1}
-    mock_slack.return_value = {"success": True, "items_sent": 1}
+    mock_bitable.return_value = {"success": True, "created": 1, "total": 1}
+    mock_feishu_chat.return_value = {"success": True, "items_sent": 1}
 
     # Execute
     initial_state = {
@@ -57,7 +57,9 @@ def test_full_pipeline_flow(
         "raw_items": [],
         "priorities": [],
         "structured_items": [],
-        "mcp_results": {},
+        "send_to_bitable": True,
+        "send_to_feishu_chat": True,
+        "integration_results": {},
         "errors": [],
     }
 
@@ -67,29 +69,29 @@ def test_full_pipeline_flow(
     assert mock_extractor.called
     assert mock_prioritizer.called
     assert mock_formatter.called
-    assert mock_notion.called
-    assert mock_slack.called
+    assert mock_bitable.called
+    assert mock_feishu_chat.called
 
     assert len(result["structured_items"]) == 1
     assert result["structured_items"][0]["task"] == "Do work"
-    assert result["mcp_results"]["notion"]["success"] is True
-    assert result["mcp_results"]["slack"]["success"] is True
+    assert result["integration_results"]["bitable"]["success"] is True
+    assert result["integration_results"]["feishu_chat"]["success"] is True
     assert len(result["errors"]) == 0
 
 
-@patch("agents.graph.dispatch_to_notion")
-@patch("agents.graph.dispatch_to_slack")
-def test_dispatcher_respects_disabled_integrations(mock_slack, mock_notion):
-    result = mcp_dispatcher_node(
+@patch("agents.graph.dispatch_to_feishu_bitable")
+@patch("agents.graph.dispatch_to_feishu_chat")
+def test_dispatcher_respects_disabled_integrations(mock_feishu_chat, mock_bitable):
+    result = integration_dispatcher_node(
         {
             "structured_items": [{"task": "Do work"}],
-            "send_to_notion": False,
-            "send_to_slack": False,
+            "send_to_bitable": False,
+            "send_to_feishu_chat": False,
             "errors": [],
         }
     )
 
-    mock_notion.assert_not_called()
-    mock_slack.assert_not_called()
-    assert result["mcp_results"]["notion"]["skipped"] is True
-    assert result["mcp_results"]["slack"]["skipped"] is True
+    mock_bitable.assert_not_called()
+    mock_feishu_chat.assert_not_called()
+    assert result["integration_results"]["bitable"]["skipped"] is True
+    assert result["integration_results"]["feishu_chat"]["skipped"] is True

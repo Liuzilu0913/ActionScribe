@@ -10,12 +10,11 @@
   <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"/>
   <img src="https://img.shields.io/badge/Groq-000000?style=for-for-the-badge&logo=groq&logoColor=white" alt="Groq"/>
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=chainlink&logoColor=white" alt="LangGraph"/>
-  <img src="https://img.shields.io/badge/Notion_API-000000?style=for-the-badge&logo=notion&logoColor=white" alt="Notion API"/>
-  <img src="https://img.shields.io/badge/Slack_API-4A154B?style=for-the-badge&logo=slack&logoColor=white" alt="Slack API"/>
+  <img src="https://img.shields.io/badge/Feishu_Open_Platform-00D6B9?style=for-the-badge&logo=lark&logoColor=white" alt="Feishu Open Platform"/>
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
 </p> <p>
-  <strong>A fully automated LangGraph agent pipeline that ingests meeting audio, transcribes it, extracts actionable tasks, scores priorities, and dispatches them directly to Notion and Slack.</strong>
+  <strong>A fully automated LangGraph agent pipeline that ingests meeting audio, transcribes it, extracts actionable tasks, scores priorities, and optionally sends them to Feishu Bitable and a Feishu group chat.</strong>
 </p> </div>
 
 ---
@@ -50,7 +49,7 @@
 
 **ActionScribe** is an innovative, AI-powered solution designed to streamline post-meeting workflows by automating the identification, prioritization, and distribution of action items. Leveraging a sophisticated **LangGraph** agent architecture, ActionScribe transforms raw meeting audio or transcripts into structured, actionable tasks, significantly reducing manual effort and improving team productivity.
 
-The system integrates with project management and communication tools like Notion and Slack. It uses **Groq** for Whisper Large v3 transcription and GPT-OSS 20B task analysis. Notion and Slack are optional integrations.
+The system integrates with Feishu for project tracking and team notifications. It uses **Groq** for Whisper Large v3 transcription and GPT-OSS 20B task analysis. Feishu Bitable and group notifications are optional integrations.
 
 ---
 
@@ -62,8 +61,8 @@ The system integrates with project management and communication tools like Notio
 | ⚡ **AI Processing** | Uses Groq Whisper Large v3 for transcription and GPT-OSS 20B for action item extraction and analysis. |
 | 🧠 **Multi-Agent LangGraph Pipeline** | Orchestrates a sophisticated workflow involving Extractor, Prioritizer, Formatter, and Dispatcher agents to ensure comprehensive task management. |
 | 📊 **Intelligent Priority Scoring** | Utilizes an LLM to assign a priority score (1-25) based on the urgency and business impact of each action item. |
-| 🔗 **Notion Integration** | Automatically creates detailed database pages in Notion for every extracted task, facilitating organized project management. |
-| 📢 **Slack Broadcasting** | Posts formatted meeting summaries and task lists to designated Slack channels, ensuring timely team communication. |
+| 🔗 **Feishu Bitable Integration** | Creates a row for each extracted task in a configured Feishu Bitable. |
+| 📢 **Feishu Group Bot** | Posts a formatted meeting summary and action items to a Feishu group through a custom-bot webhook. |
 | 🌐 **Interactive Streamlit Dashboard** | Provides a user-friendly interface to monitor pipeline progress, review extracted tasks, and manage integrations on the fly. |
 
 ---
@@ -79,9 +78,9 @@ graph TD
     D -- "Extractor Agent" --> E["Raw Action Items"]
     E -- "Prioritizer Agent" --> F["Scored Action Items"]
     F -- "Formatter Agent" --> G["Structured Action Items"]
-    G -- "Dispatcher Agent" --> H["Notion / Slack Integration Adapters"]
-    H -- "Notion REST API" --> I["Notion Database"]
-    H -- "Slack Webhook" --> J["Slack Channel"]
+    G -- "Dispatcher Agent" --> H["Feishu Integration Adapter"]
+    H -- "Bitable API" --> I["Feishu Bitable"]
+    H -- "Custom Bot Webhook" --> J["Feishu Group"]
 ```
 
 ---
@@ -93,7 +92,7 @@ graph TD
 | **Frontend** | Streamlit | Interactive web dashboard for user input and results display. |
 | **Backend** | FastAPI, Python 3.11+ | High-performance REST API server for orchestrating the pipeline. |
 | **AI/LLM** | LangChain, LangGraph, Groq (GPT-OSS 20B & Whisper Large v3) | Core AI engine for transcription, extraction, prioritization, and formatting. |
-| **Integrations** | Notion REST API, Slack Incoming Webhooks | Optional dispatch of action items to project management and communication platforms. |
+| **Integrations** | Feishu Bitable API, Feishu custom-bot webhook | Optional task record creation and group notifications. |
 | **Infrastructure** | Docker, Docker Compose | Containerization for easy setup, deployment, and scalability. |
 
 ---
@@ -111,10 +110,9 @@ ActionScribe/
 ├── 📁 api/                       # FastAPI backend application
 │   ├── __init__.py
 │   └── main.py                  # Main FastAPI application entry point, defines endpoints
-├── 📁 mcp/                       # Notion REST and Slack webhook integrations
+├── 📁 integrations/              # Feishu Open Platform REST integrations
 │   ├── __init__.py
-│   ├── notion_mcp.py            # Handles dispatching tasks to Notion
-│   └── slack_mcp.py             # Handles dispatching summaries to Slack
+│   └── feishu.py                # Bitable records and custom-bot messages
 ├── 📁 transcriber/               # Audio transcription module
 │   ├── __init__.py
 │   └── whisper_api.py           # Groq Whisper cloud API client
@@ -145,10 +143,10 @@ The fastest way to get ActionScribe up and running is using Docker Compose.
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
 
-- A **Groq API key** is required for AI analysis and transcription. Notion and Slack credentials are optional.
+- A **Groq API key** is required for AI analysis and transcription. Feishu credentials are optional.
   - Get your Groq API key from [Groq Console](https://console.groq.com/keys).
-  - Obtain Notion API key and database ID from [Notion Developers](https://developers.notion.com/).
-  - Create a Slack Incoming Webhook URL from [Slack API](https://api.slack.com/apps).
+  - Create a Feishu custom app and grant it access to the target Bitable in [Feishu Open Platform](https://open.feishu.cn/).
+  - Add a Feishu custom bot to a group and copy its webhook if group notifications are needed.
 
 ### Step 1 — Clone the repository
 
@@ -165,13 +163,15 @@ Copy the example environment file and populate it with your API keys:
 cp .env.example .env
 ```
 
-Open `.env` and add your Groq key. Add Notion and Slack values only if you want to use those integrations:
+Open `.env` and add your Groq key. Add Feishu values only for the integrations you want to enable:
 
 ```
 GROQ_API_KEY=gsk_your_groq_api_key_here
-NOTION_API_KEY=secret_your_notion_api_key_here
-NOTION_DATABASE_ID=your_notion_database_id_here
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/your/slack/webhook/url
+FEISHU_APP_ID=your_custom_app_id
+FEISHU_APP_SECRET=your_custom_app_secret
+FEISHU_BITABLE_APP_TOKEN=your_bitable_app_token
+FEISHU_BITABLE_TABLE_ID=your_table_id
+FEISHU_BOT_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/your_webhook_token
 ```
 
 ### Step 3 — Launch with Docker Compose
@@ -240,7 +240,7 @@ Key endpoints exposed by the FastAPI backend:
 | --- | --- | --- | --- |
 | `GET` | `/api/health` | Service health check. | No |
 | `POST` | `/api/v1/transcribe` | Transcribe an audio file to text using Groq Whisper API (cloud). | No |
-| `POST` | `/api/v1/pipeline/process` | Full pipeline: Audio or Transcript → Action Items → Notion + Slack. | No |
+| `POST` | `/api/v1/pipeline/process` | Full pipeline: Audio or Transcript → Action Items → optional Feishu integrations. | No |
 | `GET` | `/docs` | Interactive Swagger UI for API documentation. | No |
 
 ---
@@ -249,11 +249,11 @@ Key endpoints exposed by the FastAPI backend:
 
 ActionScribe is designed with robust integrations and considerations for secure operation:
 
-- **🔑 API Key Management** — All sensitive API keys (Groq, Notion) are loaded from environment variables, ensuring they are never hardcoded and can be securely managed.
+- **🔑 API Key Management** — Groq and Feishu credentials are loaded from environment variables and must not be committed to Git.
 
-- **🔗 Notion Integration** — Seamlessly creates new database items in your specified Notion database, allowing for centralized task tracking.
+- **🔗 Feishu Bitable Integration** — Creates task records in a configured Bitable table.
 
-- **💬 Slack Integration** — Posts concise summaries and action item lists to designated Slack channels, keeping your team informed.
+- **💬 Feishu Group Bot** — Posts concise summaries to a Feishu group using a custom-bot webhook.
 
 - **🛡️ CORS Protection** — Configurable CORS middleware in FastAPI allows for controlled access to the API endpoints.
 

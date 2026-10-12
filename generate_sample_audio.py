@@ -15,7 +15,7 @@ text = (
     "Shubham, you need to complete the payment module API integration by July 25th, 2026. "
     "Vijay, please verify all unit tests pass before the QA handoff on July 28th. "
     "Priya will configure the staging server environment by EOD tomorrow. "
-    "Let's make sure our Notion database and Slack channel are updated correctly. Thanks team!"
+    "Let's make sure our Feishu Base and project group are updated correctly. Thanks team!"
 )
 
 output_filename = "sample_meeting.mp3"

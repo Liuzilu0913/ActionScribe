@@ -4,7 +4,7 @@ agents/formatter_agent.py
 Validates and normalizes scored action items using Pydantic structured output.
 
 Guarantees every action item conforms to the ActionItem schema before
-being dispatched to Notion/Slack.
+being dispatched to optional external integrations.
 
 Uses Groq with structured output — no GPU required.
 """
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ActionItem(BaseModel):
-    """Final validated action item — matches Notion + Slack payload schema."""
+    """Final validated action item used by the page and Feishu integrations."""
 
     task: str = Field(description="Clear, actionable task description")
     owner: str = Field(description="Person responsible for the task, or 'TBD'")

@@ -3,7 +3,7 @@ agents/graph.py
 ───────────────
 LangGraph StateGraph — wires the 4-node pipeline together.
 
-Flow: extractor → prioritizer → formatter → mcp_dispatcher → END
+Flow: extractor → prioritizer → formatter → integration_dispatcher → END
 
 Uses modern LangGraph API (>=0.2). No GPU required.
 """
@@ -17,8 +17,7 @@ from typing_extensions import TypedDict
 from agents.extractor_agent import run_extractor
 from agents.formatter_agent import run_formatter
 from agents.prioritizer_agent import run_prioritizer
-from mcp.notion_mcp import dispatch_to_notion
-from mcp.slack_mcp import dispatch_to_slack
+from integrations.feishu import dispatch_to_feishu_bitable, dispatch_to_feishu_chat
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +33,12 @@ class PipelineState(TypedDict):
     """
 
     transcript: str                        # Input: raw transcript text
-    send_to_notion: bool                   # Whether Notion dispatch is enabled
-    send_to_slack: bool                    # Whether Slack dispatch is enabled
+    send_to_bitable: bool                  # Whether Feishu Bitable dispatch is enabled
+    send_to_feishu_chat: bool              # Whether Feishu group notification is enabled
     raw_items: List[Dict[str, Any]]        # After extractor: unscored action items
     priorities: List[Dict[str, Any]]       # After prioritizer: scored action items
     structured_items: List[Dict[str, Any]] # After formatter: validated + clean items
-    mcp_results: Dict[str, Any]            # After dispatcher: Notion + Slack results
+    integration_results: Dict[str, Any]    # Feishu Bitable and group-notification results
     errors: List[str]                      # Accumulated error messages
 
 
@@ -89,54 +88,54 @@ def formatter_node(state: PipelineState) -> Dict[str, Any]:
         }
 
 
-def mcp_dispatcher_node(state: PipelineState) -> Dict[str, Any]:
+def integration_dispatcher_node(state: PipelineState) -> Dict[str, Any]:
     """
-    Node 4 — Dispatch validated items to Notion and Slack.
+    Node 4 — Dispatch validated items to Feishu Bitable and a group bot.
 
     Philosophy: If one integration fails, the other still runs.
     Both failing still returns structured_items to the caller.
     """
-    logger.info("[LangGraph] Running mcp_dispatcher_node...")
+    logger.info("[LangGraph] Running integration_dispatcher_node...")
     tasks = state.get("structured_items", [])
     errors = list(state.get("errors", []))
 
-    notion_result: Dict[str, Any] = {}
-    slack_result: Dict[str, Any] = {}
+    bitable_result: Dict[str, Any] = {}
+    chat_result: Dict[str, Any] = {}
 
-    if state.get("send_to_notion", True):
+    if state.get("send_to_bitable", False):
         try:
-            notion_result = dispatch_to_notion(tasks)
-            logger.info("Notion dispatch: %s", notion_result)
+            bitable_result = dispatch_to_feishu_bitable(tasks)
+            logger.info("Feishu Bitable dispatch: %s", bitable_result)
         except Exception as e:
-            logger.error("Notion dispatch failed: %s", str(e))
-            notion_result = {"success": False, "error": str(e)}
-            errors.append(f"Notion dispatch error: {str(e)}")
+            logger.error("Feishu Bitable dispatch failed: %s", str(e))
+            bitable_result = {"success": False, "error": str(e)}
+            errors.append(f"Feishu Bitable dispatch error: {str(e)}")
     else:
-        notion_result = {
+        bitable_result = {
             "success": False,
             "skipped": True,
-            "error": "Notion dispatch disabled for this run.",
+            "error": "飞书多维表格写入已在本次运行中关闭。",
         }
 
-    if state.get("send_to_slack", True):
+    if state.get("send_to_feishu_chat", False):
         try:
-            slack_result = dispatch_to_slack(tasks)
-            logger.info("Slack dispatch: %s", slack_result)
+            chat_result = dispatch_to_feishu_chat(tasks)
+            logger.info("Feishu group notification: %s", chat_result)
         except Exception as e:
-            logger.error("Slack dispatch failed: %s", str(e))
-            slack_result = {"success": False, "error": str(e)}
-            errors.append(f"Slack dispatch error: {str(e)}")
+            logger.error("Feishu group notification failed: %s", str(e))
+            chat_result = {"success": False, "error": str(e)}
+            errors.append(f"Feishu group notification error: {str(e)}")
     else:
-        slack_result = {
+        chat_result = {
             "success": False,
             "skipped": True,
-            "error": "Slack dispatch disabled for this run.",
+            "error": "飞书群通知已在本次运行中关闭。",
         }
 
     return {
-        "mcp_results": {
-            "notion": notion_result,
-            "slack": slack_result,
+        "integration_results": {
+            "bitable": bitable_result,
+            "feishu_chat": chat_result,
         },
         "errors": errors,
     }
@@ -154,14 +153,14 @@ def build_workflow():
     builder.add_node("extractor", extractor_node)
     builder.add_node("prioritizer", prioritizer_node)
     builder.add_node("formatter", formatter_node)
-    builder.add_node("mcp_dispatcher", mcp_dispatcher_node)
+    builder.add_node("integration_dispatcher", integration_dispatcher_node)
 
     # Wire edges: linear pipeline
     builder.set_entry_point("extractor")
     builder.add_edge("extractor", "prioritizer")
     builder.add_edge("prioritizer", "formatter")
-    builder.add_edge("formatter", "mcp_dispatcher")
-    builder.add_edge("mcp_dispatcher", END)
+    builder.add_edge("formatter", "integration_dispatcher")
+    builder.add_edge("integration_dispatcher", END)
 
     return builder.compile()
 

@@ -35,9 +35,9 @@ def test_process_meeting_with_transcript(mock_workflow):
                 "needs_review": False,
             }
         ],
-        "mcp_results": {
-            "notion": {"success": False, "skipped": True},
-            "slack": {"success": False, "skipped": True},
+        "integration_results": {
+            "bitable": {"success": False, "skipped": True},
+            "feishu_chat": {"success": False, "skipped": True},
         },
         "errors": [],
     }
@@ -47,8 +47,8 @@ def test_process_meeting_with_transcript(mock_workflow):
         "/api/v1/pipeline/process",
         data={
             "raw_transcript": "Vijay will do X by next week.",
-            "send_to_notion": "false",
-            "send_to_slack": "false",
+            "send_to_bitable": "false",
+            "send_to_feishu_chat": "false",
         },
     )
 
@@ -57,10 +57,10 @@ def test_process_meeting_with_transcript(mock_workflow):
     assert data["status"] == "success"
     assert data["total_items"] == 1
     assert data["extracted_actions"][0]["task"] == "Test task"
-    assert data["mcp_results"]["notion"]["skipped"] is True
+    assert data["integration_results"]["bitable"]["skipped"] is True
     pipeline_input = mock_workflow.call_args.args[0]
-    assert pipeline_input["send_to_notion"] is False
-    assert pipeline_input["send_to_slack"] is False
+    assert pipeline_input["send_to_bitable"] is False
+    assert pipeline_input["send_to_feishu_chat"] is False
 
 
 def test_process_meeting_missing_params():

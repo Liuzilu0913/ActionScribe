@@ -45,7 +45,7 @@ app = FastAPI(
     description=(
         "Upload a meeting audio file or paste a transcript. "
         "The pipeline extracts action items, assigns priorities, "
-        "and dispatches tasks to Notion and Slack automatically."
+        "and optionally dispatches tasks to Feishu Bitable and a Feishu group bot."
     ),
 )
 
@@ -134,11 +134,11 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
 async def process_meeting(
     audio_file: Optional[UploadFile] = File(None),
     raw_transcript: Optional[str] = Form(None),
-    send_to_notion: bool = Form(True),
-    send_to_slack: bool = Form(True),
+    send_to_bitable: bool = Form(False),
+    send_to_feishu_chat: bool = Form(False),
 ):
     """
-    Full pipeline: Audio or Transcript → Action Items → Notion + Slack.
+    Full pipeline: Audio or Transcript → Action Items → optional Feishu integrations.
 
     Provide ONE of:
     - `audio_file`     — multipart upload (mp3, wav, m4a, ogg, webm)
@@ -151,9 +151,9 @@ async def process_meeting(
         "transcript_preview": "...",
         "total_items": 4,
         "extracted_actions": [...],
-        "mcp_results": {
-            "notion": { "total": 4, "created": 4, ... },
-            "slack":  { "success": true, ... }
+        "integration_results": {
+            "bitable": { "total": 4, "created": 4, ... },
+            "feishu_chat": { "success": true, ... }
         },
         "errors": []
     }
@@ -196,12 +196,12 @@ async def process_meeting(
     # ── Step 2: LangGraph pipeline ────────────────────────────────────────────
     initial_state = {
         "transcript": resolved_transcript,
-        "send_to_notion": send_to_notion,
-        "send_to_slack": send_to_slack,
+        "send_to_bitable": send_to_bitable,
+        "send_to_feishu_chat": send_to_feishu_chat,
         "raw_items": [],
         "priorities": [],
         "structured_items": [],
-        "mcp_results": {},
+        "integration_results": {},
         "errors": [],
     }
 
@@ -222,7 +222,7 @@ async def process_meeting(
             "transcript_preview": preview,
             "total_items": len(final_state.get("structured_items", [])),
             "extracted_actions": final_state.get("structured_items", []),
-            "mcp_results": final_state.get("mcp_results", {}),
+            "integration_results": final_state.get("integration_results", {}),
             "errors": final_state.get("errors", []),
         }
 
