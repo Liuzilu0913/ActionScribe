@@ -189,16 +189,16 @@ notepad .env
 | 仓库测试 | 14 passed，1 条 Starlette/AnyIO 弃用警告 | 测试使用 Mock，不代表 Groq 云端联调通过。 |
 | `GET /api/health` | HTTP 200，`status=healthy` | 本地真实服务。 |
 | `GET /docs`、Streamlit 根页面、Streamlit 健康端点 | 均 HTTP 200 | 本地真实服务。 |
-| 会议文字提交 API | Mock 工作流测试通过 | 验证表单上传、API 返回和页面使用的数据结构；没有调用真实 LLM。 |
-| `sample_meeting.mp3` 上传 | Mock 转写器测试通过 | 样例文件已被 API 接收并传给转写器替身；没有调用 Groq Whisper。 |
+| 会议文字提交 API | Mock 工作流测试通过；Groq 真实联调通过 | 真实调用使用 GPT-OSS 20B；返回 3 条任务，包含任务描述、负责人、ISO 截止日期、紧急度、影响度、优先级分数/标签、置信度和复核标志；无错误。 |
+| `sample_meeting.mp3` 上传至 `/api/v1/transcribe` | Groq Whisper 真实联调通过 | HTTP 200，返回 372 个字符的非空转写；确认使用项目样例音频。 |
+| `sample_meeting.mp3` 直传完整工作流 | Groq 真实端到端联调通过 | Whisper 返回 372 字符转写后，Extractor、Prioritizer、Formatter、Dispatcher 依次完成；返回 4 条结构化任务，Notion/Slack 均 skipped，errors 为空。有 1 条结果负责人和日期为 TBD 且 needs_review=true，应人工核对。首次请求遇到连接错误，重试成功。 |
 | Extractor、Prioritizer、Formatter、Dispatcher 顺序及字段传递 | Mock 工作流测试通过 | 节点输入输出和 Notion/Slack 调用逻辑被替身验证。 |
 | Notion/Slack 缺少凭据、关闭开关 | Mock 测试通过，无外部 HTTP 请求 | 不是 Notion 或 Slack 的真实联调。 |
-| Groq 真实文字分析及 Whisper 真实转写 | 待测 | 你已授权；等待本机 `.env` 中配置 `GROQ_API_KEY`。 |
+| Groq 真实文字分析及 Whisper 真实转写 | 通过 | 本机 `.env` 已配置 Key；只检查配置是否存在，不读取或输出 Key。 |
 | Notion 创建页面、Slack 发消息 | 未测 | 尚无凭据和 Webhook。 |
 
 ## 11. 尚未解决或尚未验证
 
-- 真实 Groq 文本分析、优先级评估、结构化输出和音频转写需要有效的 `GROQ_API_KEY`。Key 配好后重启后端即可继续测试。
 - Notion、Slack 的真实 API 成功、错误响应和目标数据库字段映射需要用户配置对应凭据后验证。
 - Docker 未安装，因此 Docker Compose 路径没有执行；本机 Python 路径已运行。
 - 现有测试运行时有 1 条 Starlette 提示 AnyIO 接口弃用警告，不影响测试通过和服务启动。
