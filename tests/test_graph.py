@@ -69,6 +69,9 @@ def test_full_pipeline_flow(
 
     # Asserts
     assert mock_extractor.called
+    mock_extractor.assert_called_once_with(
+        "Vijay do work.", meeting_date="2026-10-13"
+    )
     assert mock_prioritizer.called
     assert mock_formatter.called
     assert mock_bitable.called

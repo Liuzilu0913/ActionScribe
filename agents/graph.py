@@ -52,7 +52,9 @@ def extractor_node(state: PipelineState) -> Dict[str, Any]:
     """Node 1 — Parse transcript and extract raw action items."""
     logger.info("[LangGraph] Running extractor_node...")
     try:
-        raw_items = run_extractor(state["transcript"])
+        raw_items = run_extractor(
+            state["transcript"], meeting_date=state.get("meeting_date")
+        )
         return {"raw_items": raw_items}
     except Exception as e:
         logger.error("extractor_node failed: %s", str(e))

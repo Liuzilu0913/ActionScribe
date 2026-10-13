@@ -27,8 +27,8 @@ Analyze the meeting transcript and extract ALL action items.
 Rules:
 - Extract both EXPLICIT actions ("John will do X by Friday") and IMPLICIT ones ("We should do X")
 - If the owner is unclear, set "owner" to "TBD"
-- If the deadline is unclear, infer from context (e.g., "by EOD" → today's date) or set to "TBD"
-- Convert relative dates to ISO format YYYY-MM-DD when possible
+- Resolve relative deadlines against the provided meeting date. For example, if the meeting date is 2026-10-13, "tomorrow EOD" means 2026-10-14.
+- Convert resolved deadlines to ISO format YYYY-MM-DD. If the meeting date is unavailable or the deadline remains ambiguous, set it to "TBD".
 - Ignore pure discussion with no commitment or next step
 - Mark ambiguous items with "needs_review": true
 
@@ -54,7 +54,7 @@ If there are zero action items, return an empty JSON array: []"""
 # Main Function
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_extractor(transcript: str) -> list:
+def run_extractor(transcript: str, meeting_date: str | None = None) -> list:
     """
     Parse a meeting transcript and extract all action items.
 
@@ -62,6 +62,7 @@ def run_extractor(transcript: str) -> list:
 
     Args:
         transcript: Raw meeting transcript text.
+        meeting_date: ISO meeting date used as the reference date for relative deadlines.
 
     Returns:
         List of raw action item dicts. On JSON parse failure, returns a
@@ -77,13 +78,20 @@ def run_extractor(transcript: str) -> list:
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", EXTRACTOR_SYSTEM_PROMPT),
-        ("user", "Meeting Transcript:\n\n{transcript}"),
+        (
+            "user",
+            "Meeting date for relative deadline calculations (YYYY-MM-DD): {meeting_date}\n\n"
+            "Meeting Transcript:\n\n{transcript}",
+        ),
     ])
 
     chain = prompt | llm
 
     try:
-        response = chain.invoke({"transcript": transcript})
+        response = chain.invoke({
+            "transcript": transcript,
+            "meeting_date": meeting_date or "not provided",
+        })
         content = response.content
 
         # Strip markdown code fences if LLM wraps output anyway
