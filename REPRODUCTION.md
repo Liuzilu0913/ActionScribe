@@ -191,6 +191,7 @@ notepad .env
 | 原 Bitable 集成向固定 `FEISHU_BITABLE_TABLE_ID` 追加记录，无法按会议区分表。 | 改为每次启用写入时查询 Base 表名，按日期和会议名称生成不冲突名称，在 Base 内创建字段并写入新 `table_id`；不更新或删除旧数据。 |
 | 群消息此前没有会议元数据，也无法指向本次新表。 | 前端只增加一组名称/日期输入；两项集成共用同一组值。联合开启时先处理新表，再在群消息中附本次有效表链接或明确写入失败和实际数量。 |
 | 集成开关开启时缺少会议名称或日期会把无效请求送入工作流。 | 前端和 FastAPI 都在 Groq 转写/分析及飞书调用前以中文拒绝不完整或非法会议信息；关闭两项集成时允许留空。 |
+| 用户通过 Streamlit 分析时仍写入固定旧表、群消息缺少会议元数据。 | 检查发现 8000 端口的 Uvicorn 进程启动时未开启 `--reload`，其 OpenAPI 仍只有旧表单字段。重启 API 和 Streamlit 后，当前 API schema 已包含 `meeting_name`、`meeting_date`；健康检查和前端首页均返回 HTTP 200。 |
 
 ## 10. 测试过程与实际结果
 
@@ -201,6 +202,7 @@ notepad .env
 | 仓库测试 | 36 passed，1 条 Starlette/AnyIO 弃用警告 | 本次新增飞书逻辑均使用 Mock，不代表本次新建表或新格式消息真实联调通过。 |
 | `GET /api/health` | HTTP 200，`status=healthy` | 本地真实服务。 |
 | `GET /docs`、Streamlit 根页面、Streamlit 健康端点 | 均 HTTP 200 | 本地真实服务。 |
+| 本地服务代码版本核对 | 通过 | 重启后 OpenAPI 表单字段为 `audio_file`、`raw_transcript`、两个集成开关及 `meeting_name`、`meeting_date`；没有调用 Groq 或飞书。 |
 | 会议文字提交 API | Mock 工作流测试通过；Groq 真实联调通过 | 真实调用使用 GPT-OSS 20B；返回 3 条任务，包含任务描述、负责人、ISO 截止日期、紧急度、影响度、优先级分数/标签、置信度和复核标志；无错误。 |
 | `sample_meeting.mp3` 上传至 `/api/v1/transcribe` | Groq Whisper 真实联调通过 | HTTP 200，返回 372 个字符的非空转写；确认使用项目样例音频。 |
 | `sample_meeting.mp3` 直传完整工作流 | Groq 真实端到端联调通过（集成改造前） | Whisper 返回 372 字符转写后，Extractor、Prioritizer、Formatter、Dispatcher 依次完成；返回 4 条结构化任务，旧版 Notion/Slack 均 skipped，errors 为空。有 1 条结果负责人和日期为 TBD 且 needs_review=true，应人工核对。首次请求遇到连接错误，重试成功。 |
@@ -223,6 +225,7 @@ notepad .env
 
 - 本次飞书新建表、字段创建、写入任务和带本次链接的群通知已完成真实联调。首次权限错误及失败摘要也保留在群消息历史中；代码未删除或覆盖任何表和记录。
 - 真实验证通过的是直接调用飞书集成适配器，会议任务为固定测试数据；没有在 Streamlit 页面再次调用 Groq 做端到端重跑。
+- 修复旧 API 进程后，服务接口版本检查通过；用户从浏览器刷新后仍需主动提交一次会议分析，才能验证当前 UI 到 Groq 再到飞书的整条真实流程。该操作会按所选集成创建新表和/或发送群消息。
 - Docker 未安装，因此 Docker Compose 路径没有执行；本机 Python 路径已运行。
 - 现有测试运行时有 1 条 Starlette 提示 AnyIO 接口弃用警告，不影响测试通过和服务启动。
 
