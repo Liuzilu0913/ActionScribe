@@ -128,6 +128,24 @@ st.markdown("""
     }
     [data-testid="stSidebar"] > div:first-child { background: transparent; }
 
+    /* Remove the tall sidebar header and align its toggle with the settings row. */
+    [data-testid="stSidebarHeader"] {
+        position: relative !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+    }
+    [data-testid="stSidebarCollapseButton"] {
+        position: absolute !important;
+        top: 1.25rem !important;
+        right: 0.75rem !important;
+        z-index: 1001 !important;
+    }
+    [data-testid="stSidebarUserContent"] { padding-top: 1rem !important; }
+
     /* Primary button */
     .stButton > button[kind="primary"] {
         background: linear-gradient(120deg, #3459c7, #4778d2);
@@ -168,10 +186,29 @@ st.markdown("""
         background-color: #ffffff;
     }
 
-    /* Hide Streamlit branding while keeping its native sidebar toggle reachable. */
+    /* Remove the top toolbar while keeping the native sidebar toggle reachable. */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     [data-testid="stAppDeployButton"] {display: none !important;}
+    [data-testid="stHeader"] {
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        overflow: visible !important;
+    }
+    [data-testid="stToolbar"] {
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+    [data-testid="stExpandSidebarButton"] {
+        position: fixed !important;
+        top: 1.25rem !important;
+        left: 0.75rem !important;
+        z-index: 1001 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
