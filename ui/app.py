@@ -164,6 +164,7 @@ st.markdown("""
     /* Hide Streamlit branding while keeping its native sidebar toggle reachable. */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    [data-testid="stAppDeployButton"] {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
