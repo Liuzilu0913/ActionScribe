@@ -77,6 +77,7 @@ st.markdown("""
     [data-testid="stAppViewContainer"] { background: transparent; }
     [data-testid="stHeader"] { background: rgba(248, 251, 255, 0.88); }
     [data-testid="stMain"] { color: var(--ink); }
+    [data-testid="stMainBlockContainer"] { padding-top: 3.25rem !important; }
 
     /* Hero header */
     .hero-header {
