@@ -18,6 +18,7 @@ Run:
 import json
 import os
 from datetime import date
+from urllib.parse import urlsplit, urlunsplit
 
 import pandas as pd
 import requests
@@ -37,7 +38,19 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+def normalize_backend_url(url: str) -> str:
+    """Use IPv4 directly for the local backend to avoid slow localhost fallback."""
+    parsed = urlsplit(url)
+    if parsed.hostname and parsed.hostname.casefold() == "localhost":
+        user_info = f"{parsed.netloc.rsplit('@', 1)[0]}@" if "@" in parsed.netloc else ""
+        host_port = "127.0.0.1"
+        if parsed.port:
+            host_port += f":{parsed.port}"
+        parsed = parsed._replace(netloc=f"{user_info}{host_port}")
+    return urlunsplit(parsed).rstrip("/")
+
+
+BACKEND_URL = normalize_backend_url(os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Custom CSS — Bright, clean theme
@@ -236,10 +249,11 @@ SAMPLE_TRANSCRIPT = """大家好，我们来回顾一下今天迭代规划会确
 # Helper Functions
 # ─────────────────────────────────────────────────────────────────────────────
 
+@st.cache_data(ttl=5, show_spinner=False)
 def check_backend_health() -> bool:
     """Ping backend health endpoint."""
     try:
-        r = requests.get(f"{BACKEND_URL}/api/health", timeout=3)
+        r = requests.get(f"{BACKEND_URL}/api/health", timeout=1)
         return r.status_code == 200
     except Exception:
         return False
