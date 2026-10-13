@@ -195,6 +195,38 @@ st.markdown("""
         text-align: center;
         vertical-align: middle;
     }
+    .upload-info-icon {
+        position: relative;
+        display: inline-block;
+        width: 1.15em;
+        height: 1.15em;
+        margin-right: 0.3em;
+        border-radius: 50%;
+        background: #3459c7;
+        vertical-align: -0.2em;
+    }
+    .upload-info-icon::before {
+        position: absolute;
+        top: 0.2em;
+        left: 50%;
+        width: 0.14em;
+        height: 0.14em;
+        border-radius: 50%;
+        background: #ffffff;
+        content: "";
+        transform: translateX(-50%);
+    }
+    .upload-info-icon::after {
+        position: absolute;
+        top: 0.47em;
+        bottom: 0.18em;
+        left: 50%;
+        width: 0.13em;
+        border-radius: 0.08em;
+        background: #ffffff;
+        content: "";
+        transform: translateX(-50%);
+    }
     [data-testid="stDataFrame"] { border: 1px solid var(--line); border-radius: 10px; }
     [data-testid="stTextArea"] textarea, [data-testid="stFileUploader"] {
         background-color: #ffffff;
@@ -419,7 +451,7 @@ with left_col:
         st.markdown("""
         <div style='background:#edf3ff;border:1px solid #d8e5fb;
         border-radius:10px;padding:0.8rem;margin-bottom:1rem;font-size:0.88rem;color:#475569;'>
-        ℹ️ 文件最大 25 MB · 支持 mp3、wav、m4a、ogg、webm<br>
+        <span class="upload-info-icon" aria-hidden="true"></span>文件最大 25 MB · 支持 mp3、wav、m4a、ogg、webm<br>
         音频将通过 <strong>Groq Whisper API</strong> 转写，无需本地 GPU。
         </div>
         """, unsafe_allow_html=True)
