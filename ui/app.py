@@ -161,10 +161,9 @@ st.markdown("""
         background-color: #ffffff;
     }
 
-    /* Hide Streamlit branding */
+    /* Hide Streamlit branding while keeping its native sidebar toggle reachable. */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
