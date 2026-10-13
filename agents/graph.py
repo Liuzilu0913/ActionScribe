@@ -35,6 +35,8 @@ class PipelineState(TypedDict):
     transcript: str                        # Input: raw transcript text
     send_to_bitable: bool                  # Whether Feishu Bitable dispatch is enabled
     send_to_feishu_chat: bool              # Whether Feishu group notification is enabled
+    meeting_name: str                      # Required when writing to Bitable
+    meeting_date: str                      # ISO date required when writing to Bitable
     raw_items: List[Dict[str, Any]]        # After extractor: unscored action items
     priorities: List[Dict[str, Any]]       # After prioritizer: scored action items
     structured_items: List[Dict[str, Any]] # After formatter: validated + clean items
@@ -104,7 +106,11 @@ def integration_dispatcher_node(state: PipelineState) -> Dict[str, Any]:
 
     if state.get("send_to_bitable", False):
         try:
-            bitable_result = dispatch_to_feishu_bitable(tasks)
+            bitable_result = dispatch_to_feishu_bitable(
+                tasks,
+                meeting_name=state.get("meeting_name", ""),
+                meeting_date=state.get("meeting_date", ""),
+            )
             logger.info("Feishu Bitable dispatch: %s", bitable_result)
         except Exception as e:
             logger.error("Feishu Bitable dispatch failed: %s", str(e))
@@ -119,7 +125,12 @@ def integration_dispatcher_node(state: PipelineState) -> Dict[str, Any]:
 
     if state.get("send_to_feishu_chat", False):
         try:
-            chat_result = dispatch_to_feishu_chat(tasks)
+            chat_result = dispatch_to_feishu_chat(
+                tasks,
+                meeting_name=state.get("meeting_name", ""),
+                meeting_date=state.get("meeting_date", ""),
+                bitable_result=(bitable_result if state.get("send_to_bitable", False) else None),
+            )
             logger.info("Feishu group notification: %s", chat_result)
         except Exception as e:
             logger.error("Feishu group notification failed: %s", str(e))

@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -61,6 +62,95 @@ def test_process_meeting_with_transcript(mock_workflow):
     pipeline_input = mock_workflow.call_args.args[0]
     assert pipeline_input["send_to_bitable"] is False
     assert pipeline_input["send_to_feishu_chat"] is False
+    assert pipeline_input["meeting_name"] == ""
+    assert pipeline_input["meeting_date"] == ""
+
+
+@pytest.mark.parametrize(
+    "flags,metadata",
+    [
+        ({"send_to_bitable": "true"}, {"meeting_date": "2026-10-13"}),
+        ({"send_to_feishu_chat": "true"}, {"meeting_name": "项目周会"}),
+        (
+            {"send_to_bitable": "true", "send_to_feishu_chat": "true"},
+            {"meeting_name": "项目周会", "meeting_date": ""},
+        ),
+    ],
+)
+@patch("api.main.workflow.invoke")
+def test_process_meeting_requires_metadata_for_any_enabled_integration(
+    mock_workflow, flags, metadata
+):
+    data = {"raw_transcript": "讨论项目安排。", **flags, **metadata}
+    response = client.post(
+        "/api/v1/pipeline/process",
+        data=data,
+    )
+
+    assert response.status_code == 422
+    assert "会议名称不能为空" in response.json()["detail"] or "会议日期" in response.json()["detail"]
+    mock_workflow.assert_not_called()
+
+
+@patch("api.main.workflow.invoke")
+def test_process_meeting_trims_and_passes_metadata_when_chat_enabled(mock_workflow):
+    mock_workflow.return_value = {
+        "structured_items": [],
+        "integration_results": {},
+        "errors": [],
+    }
+
+    response = client.post(
+        "/api/v1/pipeline/process",
+        data={
+            "raw_transcript": "讨论项目安排。",
+            "send_to_feishu_chat": "true",
+            "meeting_name": "  项目周会  ",
+            "meeting_date": "2026-10-13",
+        },
+    )
+
+    assert response.status_code == 200
+    state = mock_workflow.call_args.args[0]
+    assert state["meeting_name"] == "项目周会"
+    assert state["meeting_date"] == "2026-10-13"
+
+
+@patch("api.main.workflow.invoke")
+def test_process_meeting_rejects_invalid_date_before_workflow(mock_workflow):
+    response = client.post(
+        "/api/v1/pipeline/process",
+        data={
+            "raw_transcript": "讨论项目安排。",
+            "send_to_feishu_chat": "true",
+            "meeting_name": "项目周会",
+            "meeting_date": "2026/10/13",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "YYYY-MM-DD" in response.json()["detail"]
+    mock_workflow.assert_not_called()
+
+
+@patch("api.main.get_transcriber")
+@patch("api.main.workflow.invoke")
+def test_process_audio_missing_meeting_metadata_is_rejected_before_whisper(
+    mock_workflow, mock_get_transcriber
+):
+    response = client.post(
+        "/api/v1/pipeline/process",
+        files={"audio_file": ("meeting.mp3", b"mock audio", "audio/mpeg")},
+        data={
+            "send_to_bitable": "true",
+            "meeting_date": "2026-10-13",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "会议名称不能为空" in response.json()["detail"]
+    mock_get_transcriber.assert_not_called()
+    mock_workflow.assert_not_called()
 
 
 def test_process_meeting_missing_params():

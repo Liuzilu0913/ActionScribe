@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()  # Load .env before importing anything that reads env vars
 
 from agents.graph import workflow
+from integrations.feishu import build_meeting_table_base_name, normalize_meeting_metadata
 from transcriber.whisper_api import WhisperTranscriber
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -136,6 +137,8 @@ async def process_meeting(
     raw_transcript: Optional[str] = Form(None),
     send_to_bitable: bool = Form(False),
     send_to_feishu_chat: bool = Form(False),
+    meeting_name: Optional[str] = Form(None),
+    meeting_date: Optional[str] = Form(None),
 ):
     """
     Full pipeline: Audio or Transcript → Action Items → optional Feishu integrations.
@@ -159,6 +162,20 @@ async def process_meeting(
     }
     ```
     """
+    normalized_meeting_name = (meeting_name or "").strip()
+    normalized_meeting_date = meeting_date or ""
+    if send_to_bitable or send_to_feishu_chat:
+        try:
+            normalized_meeting_name, normalized_meeting_date = normalize_meeting_metadata(
+                normalized_meeting_name, normalized_meeting_date
+            )
+            if send_to_bitable:
+                build_meeting_table_base_name(
+                    normalized_meeting_name, normalized_meeting_date
+                )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     if not audio_file and not raw_transcript:
         raise HTTPException(
             status_code=400,
@@ -198,6 +215,8 @@ async def process_meeting(
         "transcript": resolved_transcript,
         "send_to_bitable": send_to_bitable,
         "send_to_feishu_chat": send_to_feishu_chat,
+        "meeting_name": normalized_meeting_name,
+        "meeting_date": normalized_meeting_date,
         "raw_items": [],
         "priorities": [],
         "structured_items": [],

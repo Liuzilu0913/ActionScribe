@@ -17,6 +17,7 @@ Run:
 
 import json
 import os
+from datetime import date
 
 import pandas as pd
 import requests
@@ -334,6 +335,17 @@ left_col, right_col = st.columns([1, 1], gap="large")
 with left_col:
     st.markdown('<div class="section-header">📥 输入会议内容</div>', unsafe_allow_html=True)
 
+    meeting_name = st.text_input(
+        "会议名称 *" if (send_to_bitable or send_to_feishu_chat) else "会议名称",
+        placeholder="例如：项目周会",
+        key="meeting_name",
+    )
+    meeting_date = st.date_input(
+        "会议日期 *" if (send_to_bitable or send_to_feishu_chat) else "会议日期",
+        value=date.today(),
+        key="meeting_date",
+    )
+
     input_mode = st.radio(
         "选择输入方式：",
         ["🎙️ 上传录音", "📝 粘贴会议文字"],
@@ -402,7 +414,11 @@ with left_col:
 with right_col:
     st.markdown('<div class="section-header">📊 分析结果</div>', unsafe_allow_html=True)
 
-    if process_btn and has_input:
+    if process_btn and has_input and (send_to_bitable or send_to_feishu_chat) and (
+        not meeting_name.strip() or not meeting_date
+    ):
+        st.error("启用飞书集成时，请填写会议名称和会议日期。")
+    elif process_btn and has_input:
         with st.spinner("🔄 正在处理：语音转写 → 提取任务 → 评估优先级 → 整理结果……"):
             try:
                 response = None
@@ -422,6 +438,8 @@ with right_col:
                         data={
                             "send_to_bitable": send_to_bitable,
                             "send_to_feishu_chat": send_to_feishu_chat,
+                            "meeting_name": meeting_name.strip(),
+                            "meeting_date": meeting_date.isoformat(),
                         },
                         timeout=300,  # long timeout for transcription + 3 LLM calls
                     )
@@ -432,6 +450,8 @@ with right_col:
                             "raw_transcript": text_input,
                             "send_to_bitable": send_to_bitable,
                             "send_to_feishu_chat": send_to_feishu_chat,
+                            "meeting_name": meeting_name.strip(),
+                            "meeting_date": meeting_date.isoformat(),
                         },
                         timeout=120,
                     )
@@ -506,15 +526,26 @@ with right_col:
                         total_records = bitable.get("total", 0)
                         if bitable.get("skipped"):
                             if send_to_bitable:
-                                st.warning(f"📋 飞书多维表格尚未配置：{bitable.get('error', '请检查本机配置')}")
+                                st.warning(f"📋 飞书多维表格尚未配置；实际写入 0/{total_records} 条。{bitable.get('error', '请检查本机配置')}")
                             else:
                                 st.info("📋 飞书多维表格：本次未启用")
-                        elif created > 0:
-                            st.success(f"📋 飞书多维表格：已写入 {created}/{total_records} 条任务")
-                        elif bitable.get("success"):
-                            st.success("📋 飞书多维表格：本次没有待写入任务")
                         else:
-                            st.error(f"📋 飞书多维表格写入失败：{bitable.get('error', '未知错误')}")
+                            failed = bitable.get("failed", max(0, total_records - created))
+                            if bitable.get("table_created"):
+                                if bitable.get("success"):
+                                    st.success(f"📋 飞书多维表格：已新建数据表，并写入 {created}/{total_records} 条任务")
+                                else:
+                                    st.error(f"📋 飞书多维表格：数据表已新建，写入 {created}/{total_records} 条，失败 {failed} 条。{bitable.get('error', '')}")
+                                if bitable.get("table_name"):
+                                    st.write(f"实际创建的数据表：{bitable['table_name']}")
+                                if bitable.get("table_url"):
+                                    st.markdown(f"[在飞书中打开数据表]({bitable['table_url']})")
+                            elif bitable.get("success"):
+                                st.success("📋 飞书多维表格：没有待写入任务。")
+                            else:
+                                st.error(f"📋 飞书多维表格创建或写入失败：实际写入 {created}/{total_records} 条，失败 {failed} 条。{bitable.get('error', '未知错误')}")
+                                if bitable.get("table_creation_uncertain") and bitable.get("table_name"):
+                                    st.caption(f"建表结果待确认，拟创建名称：{bitable['table_name']}。请先检查飞书数据表列表。")
 
                     with chat_col:
                         feishu_chat = integration_results.get("feishu_chat", {})
