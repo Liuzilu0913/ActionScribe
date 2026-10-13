@@ -306,7 +306,7 @@ with st.sidebar:
     send_to_bitable = st.checkbox("📋 写入飞书多维表格", value=False)
     send_to_feishu_chat = st.checkbox("💬 发送飞书群通知", value=False)
 
-    st.caption("需在本机 `.env` 配置飞书凭据。未配置或关闭时，会议分析仍会正常显示。")
+    st.caption("需在本机的 .env 文件中配置飞书凭据。未配置或关闭时，会议分析仍会正常显示。")
 
     st.divider()
 
