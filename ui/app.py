@@ -536,16 +536,10 @@ with right_col:
                                     st.success(f"📋 飞书多维表格：已新建数据表，并写入 {created}/{total_records} 条任务")
                                 else:
                                     st.error(f"📋 飞书多维表格：数据表已新建，写入 {created}/{total_records} 条，失败 {failed} 条。{bitable.get('error', '')}")
-                                if bitable.get("table_name"):
-                                    st.write(f"实际创建的数据表：{bitable['table_name']}")
-                                if bitable.get("table_url"):
-                                    st.markdown(f"[在飞书中打开数据表]({bitable['table_url']})")
                             elif bitable.get("success"):
                                 st.success("📋 飞书多维表格：没有待写入任务。")
                             else:
                                 st.error(f"📋 飞书多维表格创建或写入失败：实际写入 {created}/{total_records} 条，失败 {failed} 条。{bitable.get('error', '未知错误')}")
-                                if bitable.get("table_creation_uncertain") and bitable.get("table_name"):
-                                    st.caption(f"建表结果待确认，拟创建名称：{bitable['table_name']}。请先检查飞书数据表列表。")
 
                     with chat_col:
                         feishu_chat = integration_results.get("feishu_chat", {})
