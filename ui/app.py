@@ -203,6 +203,7 @@ st.markdown("""
         padding: 0 !important;
         overflow: visible !important;
     }
+    [data-testid="stStatusWidget"] { display: none !important; }
     [data-testid="stExpandSidebarButton"] {
         position: fixed !important;
         top: 1.25rem !important;
