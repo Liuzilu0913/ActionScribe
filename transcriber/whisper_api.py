@@ -38,7 +38,9 @@ class WhisperTranscriber:
                 "GROQ_API_KEY environment variable is missing. "
                 "Get a key at https://console.groq.com/keys and set it in your .env file."
             )
-        self.client = Groq(api_key=self.api_key)
+        # Audio uploads can take longer than ordinary chat requests to process.
+        # Keep the total wait within the UI's 300-second pipeline timeout.
+        self.client = Groq(api_key=self.api_key, timeout=120.0, max_retries=1)
 
     def transcribe(
         self,
