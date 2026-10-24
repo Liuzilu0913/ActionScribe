@@ -1,299 +1,168 @@
-<div align="center">
+# ActionScribe｜会议行动项助手
 
-# 📝 ActionScribe
+> 本仓库是在 [原始 ActionScribe 项目](https://github.com/shubham333k/ActionScribe) 基础上完成的 Windows 本地复现与飞书适配版本。README 按本仓库现有代码和运行方式编写。
 
-### *AI-Powered Meeting-to-Action Pipeline*
+ActionScribe 将会议录音或文字整理成结构化行动项。它使用 Groq 提供的 Whisper API 转写音频，并用 Groq 上的聊天模型提取任务、评估优先级。用户可以查看结果，并选择将任务写入飞书多维表格或发送到飞书群机器人。
 
-<p>
-<img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"/>
-  <img src="https://img.shields.io/badge/Groq-000000?style=for-for-the-badge&logo=groq&logoColor=white" alt="Groq"/>
-  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=chainlink&logoColor=white" alt="LangGraph"/>
-  <img src="https://img.shields.io/badge/Feishu_Open_Platform-00D6B9?style=for-the-badge&logo=lark&logoColor=white" alt="Feishu Open Platform"/>
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License"/>
-</p> <p>
-  <strong>A fully automated LangGraph agent pipeline that ingests meeting audio, transcribes it, extracts actionable tasks, scores priorities, and optionally sends them to Feishu Bitable and a Feishu group chat.</strong>
-</p> </div>
+## 功能
 
----
+- 支持粘贴会议文字，或上传 MP3、WAV、M4A、OGG、WEBM 音频；上传上限为 25 MB。
+- 使用 Groq Whisper Large v3 进行云端转写；无需本地 GPU。
+- 由 LangGraph 串联任务提取、优先级评估、格式化和集成分发。
+- 按紧急度与影响度评分，生成 1–25 分的优先级及标签。
+- 启用飞书多维表格时，每次提交都会在配置的 Base 中创建新数据表并写入本次任务。
+- 启用飞书群通知时，发送包含会议名称、日期和行动项的摘要。
+- 多维表格和群通知共用前端的会议名称与日期；关闭两项集成时可只做分析。
 
-## 📋 Table of Contents
+## 系统架构
 
-- [Overview](#-overview)
+~~~mermaid
+flowchart LR
+    U[用户] --> UI[Streamlit 中文界面]
+    UI --> API[FastAPI]
+    API -->|音频输入| W[Groq Whisper]
+    API -->|转写文本或会议文字| E[Extractor]
+    W --> E
+    E --> P[Prioritizer]
+    P --> F[Formatter]
+    F --> D[Dispatcher]
+    D -->|启用时| B[飞书多维表格 API]
+    D -->|启用时| C[飞书群机器人 Webhook]
+    D --> API
+    API --> UI
+~~~
 
-- [Key Features](#-key-features)
+LangGraph 使用共享的 PipelineState 保存会议文字、会议名称和日期、集成开关、各阶段任务及错误。流程按 Extractor → Prioritizer → Formatter → Dispatcher 顺序运行。Dispatcher 先处理多维表格，再处理群通知；一项集成失败不会阻止另一项继续执行。
 
-- [Architecture](#-architecture)
+## 主要目录
 
-- [Tech Stack](#-tech-stack)
+~~~text
+agents/                 LangGraph 状态、节点和任务处理 Agent
+api/main.py             FastAPI 接口与请求前置校验
+integrations/feishu.py  飞书多维表格及群机器人适配器
+transcriber/            Groq Whisper 音频转写
+ui/app.py               Streamlit 前端
+tests/                  API、Agent、工作流和集成测试
+sample_meeting.mp3      项目自带音频样例
+.env.example            本地环境变量模板
+REPRODUCTION.md         中文复现记录、联调权限及测试边界
+~~~
 
-- [Project Structure](#-project-structure)
+## 环境要求
 
-- [Quick Start](#-quick-start)
+- Windows 10/11；推荐 Python 3.11。
+- Groq API Key 用于会议文字分析和音频转写。
+- 飞书集成为可选项；不配置时仍可运行会议分析和查看结果。
+- Groq 请求由 Groq 账户计费规则管理。开始真实分析或转写前，请确认账户设置。
 
-- [API Reference](#-api-reference)
+## 安装
 
-- [Security & Integrations](#-security--integrations)
+在 PowerShell 中执行：
 
-- [Screenshots](#-screenshots)
+~~~powershell
+git clone https://github.com/Liuzilu0913/ActionScribe.git
+Set-Location ActionScribe
 
-- [Contributing](#-contributing)
-
-- [License](#-license)
-
----
-
-## 🌟 Overview
-
-**ActionScribe** is an innovative, AI-powered solution designed to streamline post-meeting workflows by automating the identification, prioritization, and distribution of action items. Leveraging a sophisticated **LangGraph** agent architecture, ActionScribe transforms raw meeting audio or transcripts into structured, actionable tasks, significantly reducing manual effort and improving team productivity.
-
-The system integrates with Feishu for project tracking and team notifications. It uses **Groq** for Whisper Large v3 transcription and GPT-OSS 20B task analysis. Feishu Bitable and group notifications are optional integrations.
-
----
-
-## ✨ Key Features
-
-| Feature | Description |
-| --- | --- |
-| 🎙️ **Audio & Text Ingestion** | Supports direct upload of `.mp3`/`.wav` audio recordings or pasting raw meeting transcripts for flexible input. |
-| ⚡ **AI Processing** | Uses Groq Whisper Large v3 for transcription and GPT-OSS 20B for action item extraction and analysis. |
-| 🧠 **Multi-Agent LangGraph Pipeline** | Orchestrates a sophisticated workflow involving Extractor, Prioritizer, Formatter, and Dispatcher agents to ensure comprehensive task management. |
-| 📊 **Intelligent Priority Scoring** | Utilizes an LLM to assign a priority score (1-25) based on the urgency and business impact of each action item. |
-| 🔗 **Feishu Bitable Integration** | Creates a row for each extracted task in a configured Feishu Bitable. |
-| 📢 **Feishu Group Bot** | Posts a formatted meeting summary and action items to a Feishu group through a custom-bot webhook. |
-| 🌐 **Interactive Streamlit Dashboard** | Provides a user-friendly interface to monitor pipeline progress, review extracted tasks, and manage integrations on the fly. |
-
----
-
-## 🏗️ Architecture
-
-```mermaid
-graph TD
-    A["Streamlit UI"] --> B{"FastAPI Backend"}
-    B -- "POST /api/v1/transcribe" --> C["Groq Whisper Transcription"]
-    B -- "POST /api/v1/pipeline/process" --> D["LangGraph Pipeline"]
-    C --> D
-    D -- "Extractor Agent" --> E["Raw Action Items"]
-    E -- "Prioritizer Agent" --> F["Scored Action Items"]
-    F -- "Formatter Agent" --> G["Structured Action Items"]
-    G -- "Dispatcher Agent" --> H["Feishu Integration Adapter"]
-    H -- "Bitable API" --> I["Feishu Bitable"]
-    H -- "Custom Bot Webhook" --> J["Feishu Group"]
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-| --- | --- | --- |
-| **Frontend** | Streamlit | Interactive web dashboard for user input and results display. |
-| **Backend** | FastAPI, Python 3.11+ | High-performance REST API server for orchestrating the pipeline. |
-| **AI/LLM** | LangChain, LangGraph, Groq (GPT-OSS 20B & Whisper Large v3) | Core AI engine for transcription, extraction, prioritization, and formatting. |
-| **Integrations** | Feishu Bitable API, Feishu custom-bot webhook | Optional task record creation and group notifications. |
-| **Infrastructure** | Docker, Docker Compose | Containerization for easy setup, deployment, and scalability. |
-
----
-
-## 📂 Project Structure
-
-```
-ActionScribe/
-├── 📁 agents/                    # LangGraph agents for extraction, prioritization, formatting
-│   ├── __init__.py
-│   ├── extractor_agent.py       # Extracts raw action items from transcript
-│   ├── formatter_agent.py       # Validates and formats action items
-│   ├── graph.py                 # Defines the LangGraph workflow
-│   └── prioritizer_agent.py     # Assigns urgency x impact scores
-├── 📁 api/                       # FastAPI backend application
-│   ├── __init__.py
-│   └── main.py                  # Main FastAPI application entry point, defines endpoints
-├── 📁 integrations/              # Feishu Open Platform REST integrations
-│   ├── __init__.py
-│   └── feishu.py                # Bitable records and custom-bot messages
-├── 📁 transcriber/               # Audio transcription module
-│   ├── __init__.py
-│   └── whisper_api.py           # Groq Whisper cloud API client
-├── 📁 ui/                        # Streamlit frontend application
-│   └── app.py                   # Streamlit dashboard for user interaction
-├── 📁 tests/                     # Unit and integration tests
-│   ├── __init__.py
-│   ├── test_api.py
-│   ├── test_extractor.py
-│   ├── test_graph.py
-│   └── test_prioritizer.py
-├── Dockerfile.backend           # Dockerfile for the FastAPI backend
-├── Dockerfile.frontend          # Dockerfile for the Streamlit frontend
-├── docker-compose.yml           # Docker Compose for multi-service orchestration
-├── generate_sample_audio.py     # Script to generate sample audio for testing
-├── README.md                    # This README file
-├── requirements.txt             # Python dependencies
-└── sample_meeting.mp3           # Sample audio file for demonstration
-```
-
----
-
-## 🚀 Quick Start
-
-The fastest way to get ActionScribe up and running is using Docker Compose.
-
-### Prerequisites
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-
-- A **Groq API key** is required for AI analysis and transcription. Feishu credentials are optional.
-  - Get your Groq API key from [Groq Console](https://console.groq.com/keys).
-  - Create a Feishu custom app and grant it access to the target Bitable in [Feishu Open Platform](https://open.feishu.cn/).
-  - Add a Feishu custom bot to a group and copy its webhook if group notifications are needed.
-
-### Step 1 — Clone the repository
-
-```bash
-git clone https://github.com/shubham333k/ActionScribe.git
-cd ActionScribe
-```
-
-### Step 2 — Configure environment variables
-
-Copy the example environment file and populate it with your API keys:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and add your Groq key. Add Feishu values only for the integrations you want to enable:
-
-```
-GROQ_API_KEY=gsk_your_groq_api_key_here
-FEISHU_APP_ID=your_custom_app_id
-FEISHU_APP_SECRET=your_custom_app_secret
-FEISHU_BITABLE_APP_TOKEN=your_bitable_app_token
-FEISHU_BITABLE_TABLE_ID=your_table_id
-FEISHU_BOT_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/your_webhook_token
-```
-
-### Step 3 — Launch with Docker Compose
-
-```bash
-docker-compose up --build
-```
-
-This will build and start both the FastAPI backend and the Streamlit frontend.
-
-### Step 4 — Access the application
-
-| Service | URL |
-| --- | --- |
-| 🌐 Streamlit UI | [http://localhost:8501](http://localhost:8501) |
-| ⚙️ FastAPI Backend | [http://localhost:8000](http://localhost:8000) |
-| 📖 API Swagger Docs | [http://localhost:8000/docs](http://localhost:8000/docs) |
-
----
-
-## 💻 Local Development
-
-For a faster development feedback loop, you can run each service individually.
-
-### Backend (FastAPI)
-
-```bash
-# Run these commands from the repository root.
 py -3.11 -m venv .venv
-# On Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
-# On macOS / Linux:
-source .venv/bin/activate
+python -m pip install -r requirements.txt
 
-pip install -r requirements.txt
+Copy-Item .env.example .env
+notepad .env
+~~~
 
-# Start the dev server with hot-reload
-python -m uvicorn api.main:app --reload --port 8000
-```
+在本机的 .env 文件中填写需要使用的凭据。至少需要配置 Groq：
 
-### Frontend (Streamlit)
+~~~dotenv
+GROQ_API_KEY=在此填写你自己的Groq密钥
+GROQ_CHAT_MODEL=openai/gpt-oss-20b
+~~~
 
-```bash
-# In a second terminal, from the repository root, activate the same .venv.
-# On Windows PowerShell:
+不要把真实密钥写进 README、源码或提交记录。仓库的 .gitignore 已忽略 .env；提交前仍应检查 Git 状态和提交差异。.env.example 仅包含空配置项和非敏感默认值。
+
+## 启动
+
+在两个独立的 PowerShell 窗口中，分别从项目根目录运行。
+
+窗口一：启动 FastAPI：
+
+~~~powershell
 .\.venv\Scripts\Activate.ps1
-# On macOS / Linux:
-source .venv/bin/activate
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
+~~~
 
-python -m streamlit run ui/app.py
-```
+窗口二：启动 Streamlit：
 
-The Streamlit frontend will be available at [**http://localhost:8501**](http://localhost:8501). It connects to the backend automatically via the `BACKEND_URL` environment variable.
-<img width="1341" height="641" alt="Screenshot 2026-07-17 215237" src="https://github.com/user-attachments/assets/f31d565a-b358-4aaa-b666-99d9052298ce" />
-<img width="1343" height="654" alt="Screenshot 2026-07-17 215053" src="https://github.com/user-attachments/assets/732a5dca-d27f-4f8a-a4e2-811e47ed4cfb" />
-<img width="1348" height="649" alt="Screenshot 2026-07-17 214911" src="https://github.com/user-attachments/assets/c89cf301-6500-47d3-a588-bf3413027e9a" />
+~~~powershell
+.\.venv\Scripts\Activate.ps1
+streamlit run ui/app.py --server.address 127.0.0.1 --server.port 8501
+~~~
 
+打开以下地址：
 
----
+- Streamlit 页面：http://localhost:8501
+- 后端健康检查：http://localhost:8000/api/health
+- FastAPI 接口文档：http://localhost:8000/docs
 
-## 📡 API Reference
+如果更改后页面没有更新，请确认当前使用的是本项目目录中的进程，并重启旧的 Uvicorn 服务。开发启动命令包含 --reload。
 
-Key endpoints exposed by the FastAPI backend:
+## 飞书多维表格
 
-| Method | Endpoint | Description | Auth Required |
-| --- | --- | --- | --- |
-| `GET` | `/api/health` | Service health check. | No |
-| `POST` | `/api/v1/transcribe` | Transcribe an audio file to text using Groq Whisper API (cloud). | No |
-| `POST` | `/api/v1/pipeline/process` | Full pipeline: Audio or Transcript → Action Items → optional Feishu integrations. | No |
-| `GET` | `/docs` | Interactive Swagger UI for API documentation. | No |
+在飞书开放平台创建自建应用，并为应用开通多维表格管理权限。将应用添加为目标多维表格 Base 的可访问应用或协作者。需要的本机配置项为：
 
----
+~~~dotenv
+FEISHU_APP_ID=
+FEISHU_APP_SECRET=
+FEISHU_BITABLE_APP_TOKEN=
+~~~
 
-## 🔒 Security & Integrations
+其中 FEISHU_BITABLE_APP_TOKEN 是 Base 的标识。程序不再依赖固定 table_id：每次启用写入时，都会在这个 Base 中创建新表，并用创建接口返回的 table_id 写入记录。表名基于 YYYY-MM-DD_会议名称；若重名则递增添加 _1、_2 等后缀。旧表和旧记录不会被更新或删除。
 
-ActionScribe is designed with robust integrations and considerations for secure operation:
+每张表会按 FEISHU_FIELD_* 配置创建任务、负责人、截止日期、优先级、分数、复核状态和原文摘录等字段。没有自定义映射时，使用 .env.example 中的默认列名。评分列为数字类型，其余字段为文本类型。
 
-- **🔑 API Key Management** — Groq and Feishu credentials are loaded from environment variables and must not be committed to Git.
+需要为自建应用开通 bitable:app 权限，并确保应用身份能够访问目标 Base。具体审批和发布流程以飞书开放平台及应用后台的权限提示为准。
 
-- **🔗 Feishu Bitable Integration** — Creates task records in a configured Bitable table.
+结果页面会显示多维表格写入状态和实际写入数量。根据本项目界面设置，页面不显示本次新建数据表名称和链接；需要查看新表时，请在飞书 Base 左侧的数据表列表中查找。
 
-- **💬 Feishu Group Bot** — Posts concise summaries to a Feishu group using a custom-bot webhook.
+## 飞书群机器人
 
-- **🛡️ CORS Protection** — Configurable CORS middleware in FastAPI allows for controlled access to the API endpoints.
+在飞书群中添加自定义机器人，把 Webhook 地址写在本机 .env：
 
----
+~~~dotenv
+FEISHU_BOT_WEBHOOK_URL=
+FEISHU_BOT_SECRET=
+FEISHU_BOT_KEYWORD=
+~~~
 
-## 📸 Screenshots
+Webhook 是必需项；如果机器人启用了签名校验，则填写 FEISHU_BOT_SECRET；如果要求自定义关键词，则填写 FEISHU_BOT_KEYWORD。密钥和 Webhook 地址不得提交到 Git。
 
-Here are some screenshots of the ActionScribe dashboard in action:
+群消息包含会议行动项数量、会议名称、日期，以及每项任务的优先级、负责人和截止日期。若同时启用了多维表格且本次写入全部成功，消息中会附上本次新表链接；若写入失败，消息会说明实际写入数，不会附成功链接。只启用群通知时不会创建表或附加旧链接。
 
-<div align="center">
-<img src="assets/dashboard.png" alt="ActionScribe Dashboard Screenshot" width="800"/>
-  <p><i>The main dashboard showing audio upload, transcript input, and extracted action items.</i></p>
-</div>
+## 会议元数据与错误处理
 
----
+启用多维表格或群通知中的任一项时，会议名称和日期必填。名称会去除首尾空格；日期必须为有效的 YYYY-MM-DD。后端会在调用 Groq 或飞书之前重复校验。两项集成都关闭时，会议名称和日期可以留空。
 
-## 🤝 Contributing
+多维表格名称遵循飞书的名称限制。对于不能用于表名的字符，接口会在调用模型前拒绝请求；过长名称会按限制截短。记录写入失败时，接口和页面会返回实际成功/失败数量。建表请求超时且无法确认是否创建时，应先检查 Base 中的数据表列表再重试。
 
-Contributions are welcome! Please follow these steps:
+## API 接口
 
-1. Fork the repository
+- GET /api/health：后端健康状态。
+- GET /docs：交互式 FastAPI 文档。
+- POST /api/v1/transcribe：接收音频并返回转写文本。
+- POST /api/v1/pipeline/process：接收会议文字或音频、集成开关和会议元数据，返回行动项与集成结果。
 
-1. Create a feature branch: `git checkout -b feature/your-feature-name`
+## 测试与复现记录
 
-1. Commit your changes: `git commit -m 'feat: Add your feature'`
+在虚拟环境中运行现有测试：
 
-1. Push to the branch: `git push origin feature/your-feature-name`
+~~~powershell
+pytest -q
+~~~
 
-1. Open a Pull Request
+此前记录的完整测试套件为 36 项通过。真实 Groq 与飞书联调的范围、Mock 覆盖项、权限问题处理和尚未覆盖的完整页面端到端流程，见 [REPRODUCTION.md](REPRODUCTION.md)。
 
-Please ensure your code passes the existing test suite:
+本地复现使用 Python 虚拟环境。仓库包含 Docker 相关文件，但当前复现未验证 Docker Compose 启动路径。
 
-```bash
-# For backend tests
-cd ActionScribe/tests
-pytest -v
-```
+## 许可证
 
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
+本项目包含的许可证见 [LICENSE](LICENSE)。
