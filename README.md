@@ -1,236 +1,359 @@
-# ActionScribe｜会议行动项助手
+<div align="center">
 
-<p align="center">
-  <strong>把会议录音和文字整理成可执行的行动项</strong><br>
-  支持任务提取、优先级评估、飞书多维表格和飞书群通知
+# 📝 ActionScribe
+
+### *AI 驱动的会议行动项处理工作流*
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit"/>
+  <img src="https://img.shields.io/badge/Groq-000000?style=for-the-badge&logo=groq&logoColor=white" alt="Groq"/>
+  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=chainlink&logoColor=white" alt="LangGraph"/>
+  <img src="https://img.shields.io/badge/飞书_多维表格-3370FF?style=for-the-badge&logo=lark&logoColor=white" alt="飞书多维表格 API"/>
+  <img src="https://img.shields.io/badge/飞书_群机器人-3370FF?style=for-the-badge&logo=lark&logoColor=white" alt="飞书群机器人"/>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT 许可证"/>
 </p>
-
-<p align="center">
-  <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white">
-  <img alt="FastAPI" src="https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white">
-  <img alt="Streamlit" src="https://img.shields.io/badge/UI-Streamlit-FF4B4B?logo=streamlit&logoColor=white">
-  <img alt="LangGraph" src="https://img.shields.io/badge/Workflow-LangGraph-1C3C3C">
-  <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-green.svg">
+<p>
+  <strong>基于 LangGraph 的自动化 Agent 工作流：接收会议录音或文字，完成语音转写、行动项提取和优先级评分，并可将任务写入飞书多维表格、发送到飞书群。</strong>
 </p>
+</div>
 
-ActionScribe 是一个中文会议行动项助手。粘贴会议记录或上传录音后，系统会转写音频、提取任务、评估优先级并展示结构化结果。你可以选择把任务写入飞书多维表格，或发送到飞书群机器人。
+---
 
-## 目录
+## 📋 目录
 
-- [功能](#功能)
-- [系统架构](#系统架构)
-- [技术栈](#技术栈)
-- [项目结构](#项目结构)
-- [快速开始](#快速开始)
-- [本地开发](#本地开发)
-- [API 接口](#api-接口)
-- [飞书集成与安全](#飞书集成与安全)
-- [项目截图](#项目截图)
-- [测试](#测试)
-- [许可证](#许可证)
+- [项目概述](#overview)
 
-## 功能
+- [核心功能](#key-features)
 
-- **会议内容输入**：粘贴会议文字，或上传 MP3、WAV、M4A、OGG、WEBM 音频，单个文件最大 25 MB。
-- **语音转写**：通过 Groq Whisper Large v3 云端转写，无需本地 GPU。
-- **行动项提取**：使用 Groq 聊天模型识别任务内容、负责人和截止日期。
-- **优先级评估**：结合紧急度和影响度计算 1–25 分，并标注优先级和复核状态。
-- **结果查看与导出**：在中文 Streamlit 页面查看任务，并可下载 JSON。
-- **按会议创建飞书数据表**：会议分析成功且启用多维表格写入时，在配置的 Base 内新建一张表，再写入本次任务；不会覆盖或删除旧表和记录。
-- **飞书群通知**：将会议名称、日期和任务摘要发送到自定义机器人。多维表格与群通知可以分别启用，也可以同时启用。
+- [系统架构](#architecture)
 
-## 系统架构
+- [技术栈](#tech-stack)
+
+- [项目结构](#project-structure)
+
+- [快速开始](#quick-start)
+
+- [本地开发](#local-development)
+
+- [API 参考](#api-reference)
+
+- [安全与集成](#security-integrations)
+
+- [项目截图](#screenshots)
+
+- [参与贡献](#contributing)
+
+- [许可证](#license)
+
+---
+
+<a id="overview"></a>
+
+## 🌟 项目概述
+
+**ActionScribe** 是一款 AI 驱动的会议行动项助手，通过自动识别、排序和分发待办任务，简化会后工作。借助 **LangGraph** Agent 架构，ActionScribe 将会议录音或文字记录转换为结构化、可执行的任务，减少人工整理工作，帮助团队推进会议决策。
+
+系统集成**飞书多维表格**和**飞书群机器人**，支持按会议创建数据表、保存行动项并发送任务摘要。语音转写使用 **Groq** 提供的 **Whisper Large v3**，任务分析默认使用 **openai/gpt-oss-20b**，可通过 `GROQ_CHAT_MODEL` 配置。中文界面提供任务概览、负责人、截止日期、优先级和复核状态；未启用外部集成时，也能独立完成会议分析并下载 JSON。
+
+---
+
+<a id="key-features"></a>
+
+## ✨ 核心功能
+
+| 功能 | 说明 |
+| --- | --- |
+| 🎙️ **音频与文字输入** | 支持上传 `.mp3`、`.wav`、`.m4a`、`.ogg`、`.webm` 会议录音，或直接粘贴会议文字；单个音频文件最大 25 MB。 |
+| ⚡ **Groq 云端 AI 处理** | 通过 Groq 调用 Whisper Large v3 转写录音，并使用 `openai/gpt-oss-20b` 分析会议文字，无需本地 GPU。 |
+| 🧠 **多 Agent LangGraph 工作流** | 按顺序组织 Extractor、Prioritizer、Formatter 和 Dispatcher 节点，完成任务提取、评分、字段整理与集成分发。 |
+| 📊 **智能优先级评分** | 根据任务紧急度和业务影响度计算 1–25 分的优先级评分，并标记优先级和需要人工复核的任务。 |
+| 🔗 **飞书多维表格集成** | 在配置的 Base 内为本次会议新建数据表，自动创建字段并写入任务；同名表使用递增后缀，保留已有表和记录。 |
+| 📢 **飞书群通知** | 向指定群机器人发送会议名称、日期和任务摘要；本次多维表格写入完整成功且链接有效时，可附上新表链接。 |
+| 🌐 **交互式 Streamlit 面板** | 提供中文输入与结果界面、后端连接状态、任务概览、JSON 下载，以及可分别开启的飞书集成选项。 |
+
+---
+
+<a id="architecture"></a>
+
+## 🏗️ 系统架构
 
 ```mermaid
-flowchart LR
-    U[用户] --> UI[Streamlit 中文界面]
-    UI -->|会议文字或音频| API[FastAPI]
-    API -->|音频| W[Groq Whisper]
-    API -->|文字| E[Extractor]
-    W --> E
-    E --> P[Prioritizer]
-    P --> F[Formatter]
-    F --> D[集成分发节点]
-    D -->|启用时| B[飞书多维表格]
-    D -->|启用时| C[飞书群机器人]
-    D --> API
-    API --> UI
+graph TD
+    A["Streamlit 中文界面"] --> B{"FastAPI 后端"}
+    B -- "POST /api/v1/transcribe" --> C["Groq Whisper 语音转写"]
+    C -- "返回转写文字" --> B
+    B -- "POST /api/v1/pipeline/process" --> D["会议文字或录音"]
+    D -- "录音先经 Groq Whisper 转写" --> E["LangGraph 工作流"]
+    D -- "文字直接分析" --> E
+    E -- "Extractor Agent" --> F["原始行动项"]
+    F -- "Prioritizer Agent" --> G["带优先级评分的行动项"]
+    G -- "Formatter Agent" --> H["结构化行动项"]
+    H -- "Dispatcher 节点" --> I["飞书集成模块"]
+    I -- "按需调用多维表格 API" --> J["本次会议的新数据表"]
+    I -- "按需调用机器人 Webhook" --> K["飞书群通知"]
 ```
 
-音频先由 Whisper 转成文字；文字随后进入 LangGraph 工作流。Extractor 提取任务，Prioritizer 评估优先级，Formatter 校验并规范字段，最后由分发节点按页面开关调用飞书。启用两个集成时，先创建并写入新数据表，再发送群消息；群消息仅在本次表格写入完整成功且链接有效时附上该表链接。
+工作流通过共享的 `PipelineState` 传递会议文字、会议信息、任务、评分和集成结果，节点按 `extractor → prioritizer → formatter → integration_dispatcher` 的固定顺序执行。单独调用转写接口只返回文字；完整分析接口会将文字送入工作流。关闭两个飞书集成时，仍返回分析结果；同时开启时，先写入新表，再发送群通知。
 
-## 技术栈
+---
 
-| 模块 | 技术 |
-| --- | --- |
-| 前端 | Streamlit、pandas |
-| 后端 | FastAPI、Uvicorn、Pydantic |
-| 工作流 | LangGraph、LangChain |
-| 语言模型 | Groq API，默认 `openai/gpt-oss-20b` |
-| 语音转写 | Groq Whisper `whisper-large-v3` |
-| 外部集成 | 飞书多维表格 REST API、飞书自定义机器人 Webhook |
+<a id="tech-stack"></a>
 
-## 项目结构
+## 🛠️ 技术栈
+
+| 层级 | 技术 | 用途 |
+| --- | --- | --- |
+| **前端** | Streamlit、pandas | 提供中文交互面板，接收会议内容并展示任务、评分与集成结果。 |
+| **后端** | FastAPI、Python 3.11、Uvicorn、Pydantic | 提供 REST API，校验输入并调度会议处理工作流。 |
+| **AI / LLM** | LangChain、LangGraph、Groq（`openai/gpt-oss-20b` 与 Whisper Large v3） | 完成语音转写、行动项提取、优先级评估和结构化整理。 |
+| **外部集成** | 飞书多维表格 REST API、飞书自定义机器人 Webhook | 按会议创建数据表、保存行动项并发送群通知。 |
+| **基础设施** | Docker、Docker Compose、Python 虚拟环境 | 提供容器配置及本地开发环境；当前本地运行采用 Windows Python 虚拟环境。 |
+
+---
+
+<a id="project-structure"></a>
+
+## 📂 项目结构
 
 ```text
 ActionScribe/
-├── agents/                 # LangGraph 状态、节点及任务处理 Agent
-├── api/main.py             # FastAPI 应用和 HTTP 接口
-├── integrations/feishu.py  # 飞书多维表格与群机器人
-├── transcriber/            # Groq Whisper 音频转写
-├── ui/app.py               # Streamlit 中文前端
-├── tests/                  # API、Agent、工作流和集成测试
-├── assets/                 # README 项目截图
-├── sample_meeting.mp3      # 示例会议录音
-├── .env.example            # 本地环境变量模板
-├── REPRODUCTION.md         # 安装、架构、联调和复现记录
-└── requirements.txt        # Python 依赖
+├── 📁 agents/                    # LangGraph 任务提取、评分和格式化 Agent
+│   ├── __init__.py
+│   ├── extractor_agent.py       # 从会议文字提取原始行动项
+│   ├── formatter_agent.py       # 校验并规范行动项字段
+│   ├── graph.py                 # 定义共享状态、工作流和集成分发节点
+│   └── prioritizer_agent.py     # 计算紧急度 × 影响度评分
+├── 📁 api/                       # FastAPI 后端应用
+│   ├── __init__.py
+│   └── main.py                  # 应用入口、HTTP 接口和输入校验
+├── 📁 integrations/              # 外部平台集成
+│   ├── __init__.py
+│   └── feishu.py                # 飞书新表创建、任务写入和群通知
+├── 📁 transcriber/               # 音频转写模块
+│   ├── __init__.py
+│   └── whisper_api.py           # 通过 Groq 调用 Whisper API
+├── 📁 ui/                        # Streamlit 前端应用
+│   └── app.py                   # 中文会议输入、结果与集成设置界面
+├── 📁 tests/                     # 单元测试与集成测试
+│   ├── __init__.py
+│   ├── test_api.py
+│   ├── test_extractor.py
+│   ├── test_graph.py
+│   ├── test_integrations.py
+│   └── test_prioritizer.py
+├── 📁 assets/                    # 项目截图
+│   ├── actionscribe-analysis.png
+│   └── actionscribe-empty-state.png
+├── .env.example                  # 环境变量配置模板
+├── Dockerfile.backend            # FastAPI 后端容器配置
+├── Dockerfile.frontend           # Streamlit 前端容器配置
+├── docker-compose.yml            # 多服务容器编排配置
+├── generate_sample_audio.py      # 测试音频生成脚本
+├── LICENSE                       # MIT 许可证
+├── README.md                     # 项目说明
+├── REPRODUCTION.md               # 环境配置、架构和实际验证记录
+├── requirements.txt              # Python 依赖
+└── sample_meeting.mp3             # 演示用会议录音
 ```
 
-## 快速开始
+---
+
+<a id="quick-start"></a>
+
+## 🚀 快速开始
+
+仓库提供 Docker Compose 配置，可同时启动 FastAPI 后端和 Streamlit 前端。当前 Windows 环境使用 Python 虚拟环境运行，步骤见[本地开发](#local-development)；Docker Compose 路径尚未完成运行验证。
 
 ### 环境要求
 
-- Windows 10/11
-- Python 3.11
-- Git
-- Groq API Key，用于文字分析和音频转写
-- 飞书应用与群机器人为可选项；未启用时仍可完成分析并查看结果
+- 使用容器启动时，安装并启动 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
 
-Groq API 请求受你的 Groq 账户方案和用量限制。请在其官方控制台查看适用的费用与额度。
+- 准备 **Groq API Key**；飞书应用和机器人配置为可选项。
+  - 在 [Groq Console](https://console.groq.com/keys) 创建 API Key。
+  - 需要写入多维表格时，在[飞书开放平台](https://open.feishu.cn/)创建应用，配置权限并授予目标 Base 访问权限。
+  - 需要群通知时，在飞书群中添加自定义机器人，获取 Webhook，并按机器人的安全设置配置签名密钥或关键词。
 
-### 安装依赖
+### 第 1 步 — 克隆仓库
 
-在 PowerShell 中执行：
-
-```powershell
+```bash
 git clone https://github.com/Liuzilu0913/ActionScribe.git
-Set-Location ActionScribe
+cd ActionScribe
+```
 
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+### 第 2 步 — 配置环境变量
+
+复制环境变量模板，并填写自己的凭据：
+
+```powershell
+# Windows PowerShell
 Copy-Item .env.example .env
-notepad .env
 ```
 
-在 `.env` 中配置 Groq Key：
+```bash
+# macOS / Linux
+cp .env.example .env
+```
+
+打开 `.env`，按需填写：
 
 ```dotenv
-GROQ_API_KEY=填写你自己的Groq_API_Key
+# 必填：会议分析与语音转写
+GROQ_API_KEY=填写你的_Groq_API_Key
 GROQ_CHAT_MODEL=openai/gpt-oss-20b
-```
 
-`.env` 只用于本机配置，已列入 `.gitignore`。不要把 API Key、App Secret 或机器人 Webhook 提交到 Git。
-
-### 启动服务
-
-打开两个 PowerShell 窗口，并确保都位于项目根目录。
-
-窗口一启动后端：
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-窗口二启动前端：
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-streamlit run ui/app.py --server.address 127.0.0.1 --server.port 8501
-```
-
-打开 [http://localhost:8501](http://localhost:8501)。后端健康状态位于 [http://localhost:8000/api/health](http://localhost:8000/api/health)，交互式接口文档位于 [http://localhost:8000/docs](http://localhost:8000/docs)。
-
-仓库也包含 Docker Compose 配置；项目当前的本地复现使用 Windows Python 虚拟环境，Docker Compose 启动路径尚未验证。
-
-## 本地开发
-
-### 使用示例会议记录
-
-1. 打开前端，选择“粘贴会议文字”。
-2. 使用“填入示例会议记录”，或粘贴自己的会议纪要。
-3. 如果不启用飞书集成，可以不填会议名称和日期。
-4. 点击“开始分析”，在右侧查看任务、负责人、截止日期和优先级。
-
-上传录音时，选择支持的音频文件后点击“开始分析”。前端会把录音交给 FastAPI，后端调用 Groq Whisper 转写，然后将转写内容送入同一条任务分析工作流。
-
-### LangGraph 工作流
-
-工作流的共享 `PipelineState` 保存会议文字、会议信息、集成开关、各节点处理结果和错误。节点顺序为：
-
-```text
-START → extractor → prioritizer → formatter → integration_dispatcher → END
-```
-
-- **State**：在各节点之间传递文字、任务、评分和集成结果。
-- **Node**：Extractor 提取原始待办；Prioritizer 计算紧急度、影响度和优先级；Formatter 将字段整理为统一结构；Dispatcher 执行已启用的飞书集成。
-- **Edge**：连接节点并规定执行顺序。当前工作流按固定顺序运行，分发节点根据开关决定是否调用飞书。
-
-## API 接口
-
-| 方法 | 路径 | 用途 |
-| --- | --- | --- |
-| `GET` | `/api/health` | 检查后端服务状态 |
-| `POST` | `/api/v1/transcribe` | 上传音频并返回转写文字 |
-| `POST` | `/api/v1/pipeline/process` | 提交文字或音频，运行完整工作流并返回任务与集成状态 |
-| `GET` | `/docs` | 打开 FastAPI Swagger 文档 |
-
-完整分析接口接收 `raw_transcript` 或 `audio_file`，并可接收 `send_to_bitable`、`send_to_feishu_chat`、`meeting_name` 和 `meeting_date`。启用任一飞书集成时，会议名称和日期均为必填；两项都关闭时可留空。日期格式为 `YYYY-MM-DD`。前端和后端均会在调用模型或飞书之前校验这些输入。
-
-## 飞书集成与安全
-
-### 飞书多维表格
-
-在飞书开放平台创建应用并授予目标 Base 的访问权限。将下列配置写入本机 `.env`：
-
-```dotenv
+# 可选：飞书多维表格
 FEISHU_APP_ID=
 FEISHU_APP_SECRET=
 FEISHU_BITABLE_APP_TOKEN=
-```
 
-`FEISHU_BITABLE_APP_TOKEN` 指向多维表格 Base。启用“写入飞书多维表格”并成功完成会议分析后，每次用户主动提交都会在该 Base 内创建新数据表，名称为 `YYYY-MM-DD_会议名称`。页面自动重新运行不会触发建表。如果名称已存在，程序会查询当前表名并在最大数字后缀上递增，例如 `_1`、`_2`。表和字段创建成功后，程序使用新接口返回的 `table_id` 写入本次任务。已有数据表和记录不会被覆盖或删除。
-
-每张新表按 `FEISHU_FIELD_*` 环境变量创建字段；未自定义时使用 `.env.example` 的中文默认列名。字段包括任务、负责人、截止日期、优先级、评分、复核状态和原文摘录。会议名称和日期与群通知共用同一组输入。页面显示写入状态和实际写入数量；表名可在飞书 Base 左侧数据表列表中查看。
-
-应用需要多维表格管理权限（`bitable:app`）以及目标 Base 的访问权限。若权限需要审核，应在飞书开放平台发布包含最新权限的应用版本并等待审核生效。
-
-### 飞书群机器人
-
-在群聊中添加自定义机器人，并在本机 `.env` 配置：
-
-```dotenv
+# 可选：飞书群机器人
 FEISHU_BOT_WEBHOOK_URL=
 FEISHU_BOT_SECRET=
 FEISHU_BOT_KEYWORD=
+
+# 本地前端连接后端的地址
+BACKEND_URL=http://127.0.0.1:8000
 ```
 
-Webhook 必填。若机器人启用了签名校验，配置对应的 `FEISHU_BOT_SECRET`；若设置了关键词校验，配置 `FEISHU_BOT_KEYWORD`。机器人会收到会议名称、日期、任务数和任务摘要。仅启用群通知时不会创建数据表，也不会附加旧表链接。两个集成都启用时，先处理本次新表；写入完整成功且有有效链接时，消息附上该表链接。写入失败时仍会发送摘要，并说明实际写入结果。
+仅体验会议分析时，填写 Groq 配置并在页面关闭两个飞书集成即可。完整字段映射和其他配置见 [`.env.example`](.env.example)。
 
-所有凭据只应保存在本机 `.env`。请勿将 `.env`、API Key、App Secret 或 Webhook 地址放入截图、README、源码或提交记录。
+### 第 3 步 — 使用 Docker Compose 启动
 
-## 项目截图
+```bash
+docker compose up --build
+```
 
-### 分析结果与飞书集成状态
+该命令会构建并启动 FastAPI 后端和 Streamlit 前端。容器内前端通过 Compose 配置的 `BACKEND_URL=http://backend:8000` 连接后端。
 
-![ActionScribe 分析结果页面，展示中文任务列表和飞书集成状态](assets/actionscribe-analysis.png)
+### 第 4 步 — 访问应用
 
-### 初始页面
+| 服务 | URL |
+| --- | --- |
+| 🌐 Streamlit 界面 | [http://localhost:8501](http://localhost:8501) |
+| ⚙️ FastAPI 后端健康检查 | [http://localhost:8000/api/health](http://localhost:8000/api/health) |
+| 📖 API Swagger 文档 | [http://localhost:8000/docs](http://localhost:8000/docs) |
 
-![ActionScribe 初始页面，等待用户输入会议内容](assets/actionscribe-empty-state.png)
+---
 
-## 测试
+<a id="local-development"></a>
 
-运行项目测试：
+## 💻 本地开发
+
+开发时可分别运行后端和前端。以下命令均从项目根目录执行，两个服务共用同一个 Python 虚拟环境。
+
+### 后端（FastAPI）
 
 ```powershell
-pytest -q
+# Windows PowerShell：创建并激活 Python 3.11 虚拟环境
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 安装依赖；先按上文配置根目录的 .env
+python -m pip install -r requirements.txt
+
+# 启动支持热重载的后端服务
+uvicorn api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-当前复现记录中，自动化测试为 36 项通过。真实 Groq 与飞书联调范围、Mock 覆盖内容、权限要求和未验证边界请查看 [REPRODUCTION.md](REPRODUCTION.md)。Mock 测试不会调用 Groq 或发送飞书消息；真实服务验证情况以复现记录为准。
+macOS / Linux 可用 `python3.11 -m venv .venv` 创建环境，再用 `source .venv/bin/activate` 激活，其余安装与启动命令相同。
 
-## 许可证
+### 前端（Streamlit）
 
-本项目采用 MIT License，详情见 [LICENSE](LICENSE)。
+打开第二个终端，进入项目根目录：
+
+```powershell
+# Windows PowerShell：激活已创建的虚拟环境
+.\.venv\Scripts\Activate.ps1
+
+# macOS / Linux 使用：source .venv/bin/activate
+
+# 启动前端
+streamlit run ui/app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+前端地址为 [**http://localhost:8501**](http://localhost:8501)，通过 `BACKEND_URL` 环境变量连接后端。进入页面后，可粘贴会议文字或上传录音，点击“开始分析”查看结果，并下载 JSON。启用任一飞书集成时，须填写会议名称和日期；关闭两个集成时可留空。
+
+---
+
+<a id="api-reference"></a>
+
+## 📡 API 参考
+
+FastAPI 后端提供以下主要接口：
+
+| 方法 | 路径 | 说明 | 是否需要接口鉴权 |
+| --- | --- | --- | --- |
+| `GET` | `/api/health` | 检查服务状态并返回版本信息。 | 否 |
+| `POST` | `/api/v1/transcribe` | 通过 Groq Whisper 云端 API 将上传的录音转成文字。 | 否 |
+| `POST` | `/api/v1/pipeline/process` | 完整工作流：录音或文字 → 行动项 → 可选的飞书多维表格与群通知。 | 否 |
+| `GET` | `/docs` | 查看交互式 Swagger API 文档。 | 否 |
+
+完整分析接口接收 `multipart/form-data`，使用 `raw_transcript` 或 `audio_file` 提交会议内容；通过 `send_to_bitable` 和 `send_to_feishu_chat` 分别控制两个集成。启用任一集成时，`meeting_name` 和 `meeting_date` 必填，日期格式为 `YYYY-MM-DD`。前后端会在调用模型或飞书之前校验会议信息。具体参数和响应结构见 `/docs`。
+
+---
+
+<a id="security-integrations"></a>
+
+## 🔒 安全与集成
+
+ActionScribe 通过环境变量管理凭据，并提供可独立启用的外部集成：
+
+- **🔑 API Key 管理** — Groq API Key、飞书 App Secret 和机器人 Webhook 从本机 `.env` 加载。`.env` 已列入 `.gitignore`，凭据不应写入源码、截图或提交记录。
+
+- **🔗 飞书多维表格集成** — 配置 `FEISHU_APP_ID`、`FEISHU_APP_SECRET` 和 `FEISHU_BITABLE_APP_TOKEN`，为应用授予 `bitable:app` 管理权限及目标 Base 访问权限。成功分析后，每次主动提交会在该 Base 内新建名为 `YYYY-MM-DD_会议名称` 的表，同名时在最大数字后缀上递增；页面自动重新运行不会触发建表。程序自动创建任务、负责人、截止日期、优先级、评分、复核状态和原文摘录等字段，列名可通过 `FEISHU_FIELD_*` 配置。已有表和记录会保留。
+
+- **💬 飞书群机器人集成** — 配置 `FEISHU_BOT_WEBHOOK_URL`；启用签名或关键词校验时，分别填写 `FEISHU_BOT_SECRET`、`FEISHU_BOT_KEYWORD`。群消息包含会议名称、日期、任务数和摘要。仅启用群通知时不会建表或附上旧表链接；同时启用两个集成时，只有本次表格写入完整成功且链接有效才附上新表链接，写入失败时仍发送摘要并说明实际写入结果。
+
+- **🛡️ CORS 配置** — FastAPI 已配置 CORS 中间件，当前开发配置允许所有来源。部署时应根据实际访问域名收紧来源配置；当前 API 接口未实现用户鉴权。
+
+---
+
+<a id="screenshots"></a>
+
+## 📸 项目截图
+
+以下为 ActionScribe 中文面板的实际项目截图：
+
+<div align="center">
+  <img src="assets/actionscribe-analysis.png" alt="ActionScribe 分析结果页面，展示会议输入、任务概览与提取的行动项" width="800"/>
+  <p><i>分析结果页面：左侧设置飞书集成，中间输入会议内容，右侧展示任务概览和行动项。</i></p>
+  <img src="assets/actionscribe-empty-state.png" alt="ActionScribe 初始页面，展示会议名称、日期、音频上传与等待分析区域" width="800"/>
+  <p><i>初始页面：上传会议录音或粘贴会议文字，填写会议信息后开始分析。</i></p>
+</div>
+
+---
+
+<a id="contributing"></a>
+
+## 🤝 参与贡献
+
+欢迎参与贡献！请按以下步骤提交修改：
+
+1. Fork 仓库。
+
+2. 创建功能分支：`git checkout -b feature/your-feature-name`。
+
+3. 提交修改：`git commit -m "feat: 添加功能说明"`。
+
+4. 推送分支：`git push origin feature/your-feature-name`。
+
+5. 创建 Pull Request。
+
+提交前，请在项目根目录运行现有测试：
+
+```bash
+python -m pytest tests -v
+```
+
+环境配置、模块说明、实际联调范围与验证记录见 [REPRODUCTION.md](REPRODUCTION.md)。Mock 测试和真实外部服务联调的结果分别记录。
+
+---
+
+<a id="license"></a>
+
+## 📄 许可证
+
+本项目采用 **MIT License**，详情见 [LICENSE](LICENSE)。
