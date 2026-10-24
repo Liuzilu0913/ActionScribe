@@ -188,13 +188,6 @@ st.markdown("""
         margin: 0.2rem;
         box-shadow: 0 2px 7px rgba(31, 51, 87, 0.04);
     }
-    .workflow-icon {
-        display: inline-block;
-        width: 1.8em;
-        margin-right: 0.15em;
-        text-align: center;
-        vertical-align: middle;
-    }
     .upload-info-icon {
         position: relative;
         display: inline-block;
@@ -406,13 +399,13 @@ with st.sidebar:
     st.markdown("""
     **会议行动项处理流程**
     
-    - <span class="workflow-icon">🎙️</span> Whisper API 语音转写
-    - <span class="workflow-icon">🤖</span> Groq 大模型提取任务
-    - <span class="workflow-icon">⚡</span> 优先级评分（1–25）
-    - <span class="workflow-icon">📋</span> 写入飞书多维表格
-    - <span class="workflow-icon">💬</span> 发送飞书群通知
-    - <span class="workflow-icon">☁️</span> 云端处理，无需本地 GPU
-    """, unsafe_allow_html=True)
+    - 🎙️ Whisper API 语音转写
+    - 🤖 Groq 大模型提取任务
+    - ⚡ 优先级评分（1–25）
+    - 📋 写入飞书多维表格
+    - 💬 发送飞书群通知
+    - ☁️ 云端处理，无需本地 GPU
+    """)
 
     st.markdown("---")
     st.caption("v1.0.0 · 基于 LangGraph 构建")
