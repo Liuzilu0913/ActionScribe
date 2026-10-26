@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 class ActionItem(BaseModel):
     """Final validated action item used by the page and Feishu integrations."""
 
-    task: str = Field(description="Clear, actionable task description")
-    owner: str = Field(description="Person responsible for the task, or 'TBD'")
+    task: str = Field(description="Clear, actionable task description in Simplified Chinese")
+    owner: str = Field(description="Original person name exactly as spoken, or 'TBD'")
     deadline: str = Field(description="ISO date YYYY-MM-DD or 'TBD'")
     urgency_score: int = Field(ge=1, le=5, description="Urgency rating 1-5")
     impact_score: int = Field(ge=1, le=5, description="Impact rating 1-5")
@@ -76,6 +76,9 @@ def run_formatter(prioritized_items: list) -> list:
     instruction = (
         "Normalize and validate these action items into the required schema. "
         "Map the 'action' field to 'task'. "
+        "Write task descriptions in concise Simplified Chinese. "
+        "Preserve Chinese names and titles in owner exactly, such as 小王 or 陈工; never translate or romanize them. "
+        "Keep source_excerpt verbatim from the original transcript. "
         "Set urgency_score=3 and impact_score=3 if they are missing. "
         "Recalculate priority_score = urgency_score × impact_score if it seems wrong. "
         f"Items:\n\n{prioritized_items}"
