@@ -25,6 +25,9 @@ EXTRACTOR_SYSTEM_PROMPT = """You are an expert meeting analyst and project manag
 Analyze the meeting transcript and extract ALL action items.
 
 Rules:
+- The default user-facing language is Simplified Chinese. Write every "action" as a concise Chinese task.
+- Keep people's names and titles exactly as spoken in the transcript (e.g. 小王, 陈工). Never translate or romanize Chinese names into Wang, Li, etc.
+- Copy "source_excerpt" verbatim from the transcript without translation; never invent owners or deadlines.
 - Extract both EXPLICIT actions ("John will do X by Friday") and IMPLICIT ones ("We should do X")
 - If the owner is unclear, set "owner" to "TBD"
 - Resolve relative deadlines against the provided meeting date. For example, if the meeting date is 2026-10-13, "tomorrow EOD" means 2026-10-14.
@@ -109,7 +112,7 @@ def run_extractor(transcript: str, meeting_date: str | None = None) -> list:
         # Graceful fallback — pipeline continues with this marker item
         return [
             {
-                "action": "Review meeting transcript manually — AI extraction failed",
+                "action": "AI 行动项提取失败，请人工核对会议转写内容",
                 "owner": "TBD",
                 "deadline": "TBD",
                 "deadline_type": "TBD",

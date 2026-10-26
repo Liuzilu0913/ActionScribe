@@ -38,7 +38,8 @@ For each action item in the input array, add the following fields:
     12-19 → "High"
      6-11 → "Medium"
       1-5 → "Low"
-- reason (string): One concise sentence explaining the combined score.
+- reason (string): One concise sentence in Simplified Chinese explaining the combined score.
+- Preserve all existing "action", "owner", and "source_excerpt" values exactly, including Chinese wording and names. Do not translate or romanize them.
 
 Return ONLY a valid JSON array containing ALL original fields PLUS these new fields.
 Do NOT drop any existing fields. No markdown, no preamble."""
