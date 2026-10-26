@@ -46,7 +46,7 @@ class WhisperTranscriber:
         self,
         audio_file: BinaryIO,
         filename: str = "meeting.mp3",
-        language: Optional[str] = "en",
+        language: Optional[str] = "zh",
     ) -> str:
         """
         Convert an audio file to text using Groq Whisper API.
@@ -54,7 +54,7 @@ class WhisperTranscriber:
         Args:
             audio_file: Binary file-like object (e.g., io.BytesIO)
             filename:   Original filename — extension determines format
-            language:   ISO-639-1 language code ("en", "hi", etc.)
+            language:   ISO-639-1 language code (default "zh" for Chinese).
                         Pass None for automatic language detection.
 
         Returns:
@@ -92,10 +92,10 @@ class WhisperTranscriber:
         self,
         audio_file: BinaryIO,
         filename: str = "meeting.mp3",
-        language: Optional[str] = "en",
+        language: Optional[str] = "zh",
     ) -> dict:
         """
-        Transcribe audio and return text with per-segment timestamps.
+        Transcribe audio with Chinese as the default and return segment timestamps.
         """
         try:
             ext = filename.rsplit(".", 1)[-1].lower()
